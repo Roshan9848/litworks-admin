@@ -59,7 +59,7 @@ export default function CMSLiveEditorPage() {
   const [videos, setVideos] = useState({
     heading: "",
     subheading: "",
-    items: [] as { url: string; title: string }[]
+    items: [] as { url: string; title: string; instagramUrl?: string }[]
   });
 
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -169,10 +169,10 @@ export default function CMSLiveEditorPage() {
   };
 
   // Video handlers
-  const handleVideoChange = (index: number, field: "url" | "title", val: string) => {
+  const handleVideoChange = (index: number, field: "url" | "title" | "instagramUrl", val: string) => {
     const nextItems = [...(videos.items || [])];
     while (nextItems.length <= index) {
-      nextItems.push({ url: "", title: "" });
+      nextItems.push({ url: "", title: "", instagramUrl: "" });
     }
     nextItems[index] = { ...nextItems[index], [field]: val };
     setVideos({ ...videos, items: nextItems });
@@ -711,12 +711,12 @@ export default function CMSLiveEditorPage() {
             <label className="text-[10px] uppercase tracking-widest text-neutral-400 font-bold block">Video Showcase Items (Reels Aspect 9:16)</label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[0, 1, 2].map((idx) => {
-                const item = (videos.items && videos.items[idx]) || { url: "", title: "" };
+                const item = (videos.items && videos.items[idx]) || { url: "", title: "", instagramUrl: "" };
                 return (
                   <div key={idx} className="bg-black border border-neutral-900 p-4 rounded-2xl space-y-3">
                     <span className="text-[10px] font-bold text-neutral-500 font-mono uppercase">Video Slot #{idx + 1}</span>
                     <div>
-                      <label className="block text-[8px] uppercase tracking-widest text-neutral-450 font-bold mb-1">Video Title</label>
+                      <label className="block text-[8px] uppercase tracking-widest text-neutral-455 font-bold mb-1">Video Title</label>
                       <input
                         type="text"
                         required
@@ -727,13 +727,23 @@ export default function CMSLiveEditorPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[8px] uppercase tracking-widest text-neutral-450 font-bold mb-1">Direct Video MP4 URL</label>
+                      <label className="block text-[8px] uppercase tracking-widest text-neutral-455 font-bold mb-1">Direct Video MP4 URL</label>
                       <input
                         type="text"
                         required
                         placeholder="https://example.com/video.mp4"
                         value={item.url}
                         onChange={(e) => handleVideoChange(idx, "url", e.target.value)}
+                        className="w-full bg-neutral-950 border border-neutral-900 rounded-lg px-3 py-2 text-[10px] text-white focus:outline-none focus:border-brand-orange font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[8px] uppercase tracking-widest text-neutral-455 font-bold mb-1">Instagram Link (Optional)</label>
+                      <input
+                        type="text"
+                        placeholder="https://instagram.com/reel/..."
+                        value={item.instagramUrl || ""}
+                        onChange={(e) => handleVideoChange(idx, "instagramUrl", e.target.value)}
                         className="w-full bg-neutral-950 border border-neutral-900 rounded-lg px-3 py-2 text-[10px] text-white focus:outline-none focus:border-brand-orange font-mono"
                       />
                     </div>
