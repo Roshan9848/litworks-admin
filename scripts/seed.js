@@ -232,6 +232,61 @@ async function seed() {
       },
       createdAt: new Date(),
       updatedAt: new Date()
+    },
+    {
+      sectionKey: "testimonials",
+      content: {
+        heading: "Loved by Brands & Individuals",
+        subheading: "Testimonials",
+        items: [
+          {
+            name: "Rahul Verma",
+            role: "Groom",
+            location: "Hyderabad",
+            rating: 5,
+            comment: "LITWORKS delivered our wedding reel within 2 hours of the event! The cinematic quality and quick sync-to-music was absolute magic."
+          },
+          {
+            name: "Sowmya Rao",
+            role: "Founder, Bloom Fashion",
+            location: "Vijayawada",
+            rating: 5,
+            comment: "Their social media management has transformed our brand online. Elegant, premium posts and systematic posting has doubled our reach."
+          },
+          {
+            name: "Karan Kalyan",
+            role: "Auto Enthusiast",
+            location: "Visakhapatnam",
+            rating: 5,
+            comment: "The reel they shot for my car delivery got over 150k views on Instagram. It looks like a high-budget commercial. Highly recommend!"
+          }
+        ]
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      sectionKey: "videos",
+      content: {
+        heading: "Cinematic Reels in Action",
+        subheading: "Portfolio Showcase",
+        items: [
+          {
+            url: "https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-light-in-a-rainy-night-42260-large.mp4",
+            title: "Neon Night Commercial"
+          },
+          {
+            url: "https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4",
+            title: "Nature Brand Reel"
+          },
+          {
+            url: "https://assets.mixkit.co/videos/preview/mixkit-slow-motion-of-a-dj-hands-at-work-41710-large.mp4",
+            title: "Cinematic DJ Promo"
+          }
+        ]
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
     }
   ];
   await mongoose.connection.collection("websitecontents").deleteMany({});

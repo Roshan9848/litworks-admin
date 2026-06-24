@@ -11,7 +11,9 @@ import {
   TrendingUp,
   Mail,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Star,
+  Video
 } from "lucide-react";
 
 export default function CMSLiveEditorPage() {
@@ -48,6 +50,18 @@ export default function CMSLiveEditorPage() {
     address: ""
   });
 
+  const [testimonials, setTestimonials] = useState({
+    heading: "",
+    subheading: "",
+    items: [] as { name: string; role: string; location: string; rating: number; comment: string }[]
+  });
+
+  const [videos, setVideos] = useState({
+    heading: "",
+    subheading: "",
+    items: [] as { url: string; title: string }[]
+  });
+
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
@@ -76,6 +90,8 @@ export default function CMSLiveEditorPage() {
           if (section.sectionKey === "stats") setStats(section.content);
           if (section.sectionKey === "faq") setFaq(section.content);
           if (section.sectionKey === "contact") setContact(section.content);
+          if (section.sectionKey === "testimonials") setTestimonials(section.content);
+          if (section.sectionKey === "videos") setVideos(section.content);
         });
       }
     } catch (e) {
@@ -131,6 +147,35 @@ export default function CMSLiveEditorPage() {
   const removeFaqItem = (index: number) => {
     const nextItems = faq.items.filter((_, i) => i !== index);
     setFaq({ ...faq, items: nextItems });
+  };
+
+  // Testimonial handlers
+  const handleTestimonialChange = (index: number, field: "name" | "role" | "location" | "rating" | "comment", val: any) => {
+    const nextItems = [...testimonials.items];
+    nextItems[index] = { ...nextItems[index], [field]: val };
+    setTestimonials({ ...testimonials, items: nextItems });
+  };
+
+  const addTestimonialItem = () => {
+    setTestimonials({
+      ...testimonials,
+      items: [...testimonials.items, { name: "", role: "", location: "", rating: 5, comment: "" }]
+    });
+  };
+
+  const removeTestimonialItem = (index: number) => {
+    const nextItems = testimonials.items.filter((_, i) => i !== index);
+    setTestimonials({ ...testimonials, items: nextItems });
+  };
+
+  // Video handlers
+  const handleVideoChange = (index: number, field: "url" | "title", val: string) => {
+    const nextItems = [...(videos.items || [])];
+    while (nextItems.length <= index) {
+      nextItems.push({ url: "", title: "" });
+    }
+    nextItems[index] = { ...nextItems[index], [field]: val };
+    setVideos({ ...videos, items: nextItems });
   };
 
   if (loading) {
@@ -484,6 +529,229 @@ export default function CMSLiveEditorPage() {
               >
                 <Save className="w-3.5 h-3.5" />
                 <span>Save Contact Info</span>
+              </button>
+            </div>
+          )}
+        </form>
+      </div>
+
+      {/* 5. TESTIMONIALS SECTION */}
+      <div className="bg-neutral-950 border border-neutral-900 rounded-3xl p-6 shadow-xl space-y-4">
+        <div className="flex items-center gap-2 border-b border-neutral-900 pb-3">
+          <Star className="w-4 h-4 text-brand-orange" />
+          <h3 className="text-xs font-black uppercase tracking-wider text-white">Client Feedbacks & Testimonials</h3>
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleCMSUpdate("testimonials", testimonials);
+          }}
+          className="space-y-4"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">Heading *</label>
+              <input
+                type="text"
+                required
+                value={testimonials.heading}
+                onChange={(e) => setTestimonials({ ...testimonials, heading: e.target.value })}
+                className="w-full bg-black border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange"
+              />
+            </div>
+            <div>
+              <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">Subheading *</label>
+              <input
+                type="text"
+                required
+                value={testimonials.subheading}
+                onChange={(e) => setTestimonials({ ...testimonials, subheading: e.target.value })}
+                className="w-full bg-black border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <div className="flex justify-between items-center">
+              <label className="text-[10px] uppercase tracking-widest text-neutral-400 font-bold">Feedback Items List</label>
+              <button
+                type="button"
+                onClick={addTestimonialItem}
+                className="text-[9px] font-extrabold uppercase text-brand-orange flex items-center gap-1 hover:underline cursor-pointer"
+              >
+                <PlusCircle className="w-3.5 h-3.5" /> Add Feedback
+              </button>
+            </div>
+
+            <div className="space-y-4 bg-black border border-neutral-850 p-4 rounded-2xl max-h-96 overflow-y-auto no-scrollbar">
+              {testimonials.items.length === 0 ? (
+                <p className="text-[10px] text-neutral-600 text-center font-mono py-4">No reviews defined</p>
+              ) : (
+                testimonials.items.map((item, index) => (
+                  <div key={index} className="space-y-3 border-b border-neutral-900/60 pb-4 last:border-b-0 last:pb-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-neutral-600 font-mono">#{index + 1}</span>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Client Name..."
+                        value={item.name}
+                        onChange={(e) => handleTestimonialChange(index, "name", e.target.value)}
+                        className="flex-1 bg-neutral-950 border border-neutral-900 rounded-lg px-3 py-2 text-[11px] text-white focus:outline-none focus:border-brand-orange"
+                      />
+                      <input
+                        type="text"
+                        required
+                        placeholder="Role (e.g. Founder)..."
+                        value={item.role}
+                        onChange={(e) => handleTestimonialChange(index, "role", e.target.value)}
+                        className="flex-1 bg-neutral-950 border border-neutral-900 rounded-lg px-3 py-2 text-[11px] text-white focus:outline-none focus:border-brand-orange"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeTestimonialItem(index)}
+                        className="text-neutral-600 hover:text-red-500 transition-colors"
+                      >
+                        <MinusCircle className="w-4.5 h-4.5" />
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Location (e.g. Hyderabad)..."
+                          value={item.location}
+                          onChange={(e) => handleTestimonialChange(index, "location", e.target.value)}
+                          className="w-full bg-neutral-950 border border-neutral-900 rounded-lg px-3 py-2 text-[11px] text-white focus:outline-none focus:border-brand-orange"
+                        />
+                      </div>
+                      <div>
+                        <select
+                          value={item.rating}
+                          onChange={(e) => handleTestimonialChange(index, "rating", parseInt(e.target.value))}
+                          className="w-full bg-neutral-950 border border-neutral-900 rounded-lg px-3 py-2 text-[11px] text-white focus:outline-none focus:border-brand-orange"
+                        >
+                          <option value={5}>5 Stars</option>
+                          <option value={4}>4 Stars</option>
+                          <option value={3}>3 Stars</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <textarea
+                      rows={2}
+                      required
+                      placeholder="Comment detail review content..."
+                      value={item.comment}
+                      onChange={(e) => handleTestimonialChange(index, "comment", e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-900 rounded-lg px-3 py-2 text-[11px] text-white focus:outline-none focus:border-brand-orange resize-none"
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {currentUser?.role === "FOUNDER" && (
+            <div className="pt-2 flex justify-end">
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-brand-orange hover:bg-white text-black font-extrabold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Save Testimonials</span>
+              </button>
+            </div>
+          )}
+        </form>
+      </div>
+
+      {/* 6. REEL VIDEOS SECTION */}
+      <div className="bg-neutral-950 border border-neutral-900 rounded-3xl p-6 shadow-xl space-y-4">
+        <div className="flex items-center gap-2 border-b border-neutral-900 pb-3">
+          <Video className="w-4 h-4 text-brand-orange" />
+          <h3 className="text-xs font-black uppercase tracking-wider text-white">Reel Videos Showcase (3 Videos in a Line)</h3>
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleCMSUpdate("videos", videos);
+          }}
+          className="space-y-4"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">Heading *</label>
+              <input
+                type="text"
+                required
+                value={videos.heading}
+                onChange={(e) => setVideos({ ...videos, heading: e.target.value })}
+                className="w-full bg-black border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange"
+              />
+            </div>
+            <div>
+              <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">Subheading *</label>
+              <input
+                type="text"
+                required
+                value={videos.subheading}
+                onChange={(e) => setVideos({ ...videos, subheading: e.target.value })}
+                className="w-full bg-black border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-2">
+            <label className="text-[10px] uppercase tracking-widest text-neutral-400 font-bold block">Video Showcase Items (Reels Aspect 9:16)</label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[0, 1, 2].map((idx) => {
+                const item = (videos.items && videos.items[idx]) || { url: "", title: "" };
+                return (
+                  <div key={idx} className="bg-black border border-neutral-900 p-4 rounded-2xl space-y-3">
+                    <span className="text-[10px] font-bold text-neutral-500 font-mono uppercase">Video Slot #{idx + 1}</span>
+                    <div>
+                      <label className="block text-[8px] uppercase tracking-widest text-neutral-450 font-bold mb-1">Video Title</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Wedding Highlights..."
+                        value={item.title}
+                        onChange={(e) => handleVideoChange(idx, "title", e.target.value)}
+                        className="w-full bg-neutral-950 border border-neutral-900 rounded-lg px-3 py-2 text-[10px] text-white focus:outline-none focus:border-brand-orange"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[8px] uppercase tracking-widest text-neutral-450 font-bold mb-1">Direct Video MP4 URL</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="https://example.com/video.mp4"
+                        value={item.url}
+                        onChange={(e) => handleVideoChange(idx, "url", e.target.value)}
+                        className="w-full bg-neutral-950 border border-neutral-900 rounded-lg px-3 py-2 text-[10px] text-white focus:outline-none focus:border-brand-orange font-mono"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {currentUser?.role === "FOUNDER" && (
+            <div className="pt-2 flex justify-end">
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-brand-orange hover:bg-white text-black font-extrabold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Save Showcase Videos</span>
               </button>
             </div>
           )}
