@@ -674,7 +674,7 @@ export default function CMSLiveEditorPage() {
       <div className="bg-neutral-950 border border-neutral-900 rounded-3xl p-6 shadow-xl space-y-4">
         <div className="flex items-center gap-2 border-b border-neutral-900 pb-3">
           <Video className="w-4 h-4 text-brand-orange" />
-          <h3 className="text-xs font-black uppercase tracking-wider text-white">Reel Videos Showcase (3 Videos in a Line)</h3>
+          <h3 className="text-xs font-black uppercase tracking-wider text-white">Reel Videos Showcase (6 Videos Grid)</h3>
         </div>
 
         <form
@@ -710,7 +710,7 @@ export default function CMSLiveEditorPage() {
           <div className="space-y-4 pt-2">
             <label className="text-[10px] uppercase tracking-widest text-neutral-400 font-bold block">Video Showcase Items (Reels Aspect 9:16)</label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[0, 1, 2].map((idx) => {
+              {[0, 1, 2, 3, 4, 5].map((idx) => {
                 const item = (videos.items && videos.items[idx]) || { url: "", title: "", instagramUrl: "" };
                 return (
                   <div key={idx} className="bg-black border border-neutral-900 p-4 rounded-2xl space-y-3">
