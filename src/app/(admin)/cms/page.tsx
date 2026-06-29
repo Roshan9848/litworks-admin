@@ -13,7 +13,8 @@ import {
   Loader2,
   AlertCircle,
   Star,
-  Video
+  Video,
+  MapPin
 } from "lucide-react";
 
 export default function CMSLiveEditorPage() {
@@ -62,6 +63,21 @@ export default function CMSLiveEditorPage() {
     items: [] as { url: string; title: string; instagramUrl?: string }[]
   });
 
+  const [locations, setLocations] = useState<{
+    states: { name: string; cities: string[] }[];
+  }>({
+    states: [
+      {
+        name: "Telangana",
+        cities: ["Hyderabad", "Karimnagar", "Nizamabad", "Armoor"]
+      },
+      {
+        name: "Andhra Pradesh",
+        cities: ["Vijayawada", "Visakhapatnam (Vizag)"]
+      }
+    ]
+  });
+
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
@@ -92,6 +108,11 @@ export default function CMSLiveEditorPage() {
           if (section.sectionKey === "contact") setContact(section.content);
           if (section.sectionKey === "testimonials") setTestimonials(section.content);
           if (section.sectionKey === "videos") setVideos(section.content);
+          if (section.sectionKey === "locations") {
+            if (section.content && Array.isArray(section.content.states)) {
+              setLocations(section.content);
+            }
+          }
         });
       }
     } catch (e) {
@@ -176,6 +197,50 @@ export default function CMSLiveEditorPage() {
     }
     nextItems[index] = { ...nextItems[index], [field]: val };
     setVideos({ ...videos, items: nextItems });
+  };
+
+  // Location handlers
+  const handleStateNameChange = (sIdx: number, val: string) => {
+    const nextStates = [...locations.states];
+    nextStates[sIdx] = { ...nextStates[sIdx], name: val };
+    setLocations({ states: nextStates });
+  };
+
+  const addState = () => {
+    setLocations({
+      states: [...locations.states, { name: "", cities: [] }]
+    });
+  };
+
+  const removeState = (sIdx: number) => {
+    const nextStates = locations.states.filter((_, idx) => idx !== sIdx);
+    setLocations({ states: nextStates });
+  };
+
+  const handleCityNameChange = (sIdx: number, cIdx: number, val: string) => {
+    const nextStates = [...locations.states];
+    const nextCities = [...nextStates[sIdx].cities];
+    nextCities[cIdx] = val;
+    nextStates[sIdx] = { ...nextStates[sIdx], cities: nextCities };
+    setLocations({ states: nextStates });
+  };
+
+  const addCity = (sIdx: number) => {
+    const nextStates = [...locations.states];
+    nextStates[sIdx] = {
+      ...nextStates[sIdx],
+      cities: [...nextStates[sIdx].cities, ""]
+    };
+    setLocations({ states: nextStates });
+  };
+
+  const removeCity = (sIdx: number, cIdx: number) => {
+    const nextStates = [...locations.states];
+    nextStates[sIdx] = {
+      ...nextStates[sIdx],
+      cities: nextStates[sIdx].cities.filter((_, idx) => idx !== cIdx)
+    };
+    setLocations({ states: nextStates });
   };
 
   if (loading) {
@@ -762,6 +827,103 @@ export default function CMSLiveEditorPage() {
               >
                 <Save className="w-3.5 h-3.5" />
                 <span>Save Showcase Videos</span>
+              </button>
+            </div>
+          )}
+        </form>
+      </div>
+
+      {/* 7. AVAILABLE LOCATIONS */}
+      <div className="bg-neutral-950 border border-neutral-900 rounded-3xl p-6 shadow-xl space-y-4">
+        <div className="flex items-center gap-2 border-b border-neutral-900 pb-3">
+          <MapPin className="w-4 h-4 text-brand-orange" />
+          <h3 className="text-xs font-black uppercase tracking-wider text-white">Available Booking Locations (States & Cities)</h3>
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleCMSUpdate("locations", locations);
+          }}
+          className="space-y-6"
+        >
+          <div className="space-y-4">
+            {locations.states.map((s, sIdx) => (
+              <div key={sIdx} className="bg-black border border-neutral-900 p-4 rounded-2xl space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <label className="block text-[8px] uppercase tracking-widest text-neutral-450 font-bold mb-1">State Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Telangana"
+                      value={s.name}
+                      onChange={(e) => handleStateNameChange(sIdx, e.target.value)}
+                      className="w-full bg-neutral-950 border border-neutral-900 rounded-lg px-3 py-2 text-[11px] text-white focus:outline-none focus:border-brand-orange"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeState(sIdx)}
+                    className="mt-4 flex items-center gap-1 text-[9px] uppercase tracking-widest text-red-500 hover:text-red-400 font-bold transition-colors cursor-pointer"
+                  >
+                    <MinusCircle className="w-3.5 h-3.5" /> Remove State
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[8px] uppercase tracking-widest text-neutral-450 font-bold">Cities in {s.name || "this state"}</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {s.cities.map((city, cIdx) => (
+                      <div key={cIdx} className="flex items-center gap-2 bg-neutral-950 border border-neutral-900 p-2 rounded-xl">
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Hyderabad"
+                          value={city}
+                          onChange={(e) => handleCityNameChange(sIdx, cIdx, e.target.value)}
+                          className="flex-1 bg-black border border-neutral-850 rounded-lg px-2.5 py-1.5 text-[10px] text-white focus:outline-none focus:border-brand-orange"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeCity(sIdx, cIdx)}
+                          className="text-neutral-500 hover:text-red-500 transition-colors cursor-pointer"
+                        >
+                          <MinusCircle className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => addCity(sIdx)}
+                      className="flex items-center justify-center gap-1.5 border border-dashed border-neutral-800 hover:border-brand-orange text-[9px] uppercase tracking-widest text-neutral-400 hover:text-white rounded-xl p-2.5 transition-all cursor-pointer"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" /> Add City
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={addState}
+              className="w-full flex items-center justify-center gap-2 border border-dashed border-neutral-800 hover:border-brand-orange text-[10px] uppercase tracking-widest text-neutral-400 hover:text-white rounded-2xl p-4 transition-all cursor-pointer"
+            >
+              <PlusCircle className="w-4 h-4" /> Add New State
+            </button>
+          </div>
+
+          {currentUser?.role === "FOUNDER" && (
+            <div className="pt-2 flex justify-end">
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-brand-orange hover:bg-white text-black font-extrabold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Save Booking Locations</span>
               </button>
             </div>
           )}
