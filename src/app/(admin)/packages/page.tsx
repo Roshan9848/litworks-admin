@@ -25,7 +25,7 @@ interface Package {
   features: string[];
   serviceType: string;
   isBestseller: boolean;
-  category: "basic" | "wedding";
+  category: "basic" | "wedding" | "custom";
   status: "active" | "inactive";
   createdAt: string;
 }
@@ -34,6 +34,14 @@ export default function PackagesManagementPage() {
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyProposalLink = (pkgId: string) => {
+    const link = `https://litworks.agency/pricing?packageId=${pkgId}`;
+    navigator.clipboard.writeText(link);
+    setCopiedId(pkgId);
+    setTimeout(() => setCopiedId(null), 3000);
+  };
 
   // Modals state
   const [showAddModal, setShowAddModal] = useState(false);
@@ -485,6 +493,118 @@ export default function PackagesManagementPage() {
         </div>
       </div>
 
+      {/* Custom Private Proposals Section */}
+      <div className="space-y-4 pt-4">
+        <h3 className="text-xs font-black uppercase tracking-widest text-neutral-400 border-b border-neutral-900 pb-2">
+          Custom proposals / Private Client Packages
+        </h3>
+        {packages.filter((p) => p.category === "custom").length === 0 ? (
+          <div className="py-8 text-center text-xs font-mono uppercase tracking-wider text-neutral-650 border border-dashed border-neutral-900 rounded-2xl">
+            No private client proposals created yet
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {packages
+              .filter((p) => p.category === "custom")
+              .map((pkg) => (
+                <div
+                  key={pkg._id}
+                  className={`relative group bg-neutral-950 border rounded-2xl p-6 transition-all duration-300 shadow-lg flex flex-col justify-between ${
+                    pkg.status === "inactive" ? "border-neutral-900 opacity-60" : "border-neutral-900 hover:border-brand-orange/40"
+                  }`}
+                >
+                  <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <span className="text-[9px] uppercase tracking-wider text-neutral-500 font-mono">
+                          {pkg.serviceType}
+                        </span>
+                        <h4 className="text-sm font-extrabold text-white mt-0.5">{pkg.title}</h4>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {pkg.isBestseller && (
+                          <span className="px-2 py-0.5 rounded bg-brand-orange/10 border border-brand-orange/20 text-[8px] font-mono text-brand-orange font-bold uppercase">
+                            Bestseller
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => togglePackageStatus(pkg)}
+                          className="text-neutral-500 hover:text-white transition-colors cursor-pointer"
+                        >
+                          {pkg.status === "active" ? (
+                            <ToggleRight className="w-6 h-6 text-brand-orange" />
+                          ) : (
+                            <ToggleLeft className="w-6 h-6 text-neutral-600" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <span className="text-xl font-black text-white font-mono">{formatCurrency(pkg.price)}</span>
+                      {pkg.discountPrice && (
+                        <span className="text-xs text-neutral-500 line-through ml-2 font-mono">
+                          {formatCurrency(pkg.discountPrice)}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-[10px] text-neutral-400 mb-5 leading-relaxed bg-black/30 border border-neutral-900 p-2.5 rounded-xl italic">
+                      {pkg.description}
+                    </p>
+
+                    <ul className="space-y-2 text-[10px] text-neutral-300 font-mono border-t border-neutral-900/60 pt-4">
+                      {pkg.features.map((feat, i) => (
+                        <li key={i} className="flex items-start gap-1.5">
+                          <span className="text-brand-orange mt-0.5">•</span>
+                          <span>{feat}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="space-y-2 mt-6">
+                    {/* Share Link Button */}
+                    <button
+                      type="button"
+                      onClick={() => copyProposalLink(pkg._id)}
+                      className={`w-full py-2.5 px-3 rounded-xl font-mono text-[9px] uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        copiedId === pkg._id
+                          ? "bg-emerald-950/20 border border-emerald-900/40 text-emerald-450 font-bold"
+                          : "bg-brand-orange/10 border border-brand-orange/20 text-brand-orange hover:bg-brand-orange hover:text-black hover:border-brand-orange"
+                      }`}
+                    >
+                      <span>{copiedId === pkg._id ? "Copied Proposal Link!" : "Copy Proposal Link"}</span>
+                    </button>
+
+                    {currentUser?.role === "FOUNDER" && (
+                      <div className="pt-2 border-t border-neutral-900/60 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(pkg)}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-neutral-905 border border-neutral-850 hover:border-brand-orange text-neutral-400 hover:text-white font-bold text-[9px] uppercase tracking-wider transition-colors cursor-pointer"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePackage(pkg._id)}
+                          className="flex items-center justify-center py-2 px-3 rounded-lg bg-neutral-950 border border-neutral-900 hover:border-red-900 text-neutral-600 hover:text-red-500 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+          </div>
+        )}
+      </div>
+
       {/* Modal: ADD / EDIT PACKAGE */}
       {(showAddModal || showEditModal) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
@@ -565,6 +685,7 @@ export default function PackagesManagementPage() {
                   >
                     <option value="basic">Basic (Instant Reels)</option>
                     <option value="wedding">Wedding Videography</option>
+                    <option value="custom">Custom Proposal (Private Link Only)</option>
                   </select>
                 </div>
                 <div className="flex items-center gap-2.5 pt-7 pl-1">

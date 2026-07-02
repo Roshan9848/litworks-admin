@@ -98,3 +98,44 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    await connectDB();
+    const user = getAuthUser(req);
+    if (!user) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Only Founder can delete coupons
+    if (user.role !== "FOUNDER") {
+      return NextResponse.json({ success: false, error: "Forbidden: Founder access required" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: "Missing coupon ID" }, { status: 400 });
+    }
+
+    const deleted = await Coupon.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return NextResponse.json({ success: false, error: "Coupon not found" }, { status: 404 });
+    }
+
+    await AuditLog.create({
+      userId: user.userId,
+      userName: user.name,
+      userEmail: user.email,
+      action: "Delete Coupon",
+      oldValue: deleted,
+    });
+
+    return NextResponse.json({ success: true, message: "Coupon deleted successfully" });
+  } catch (error: any) {
+    console.error("Coupons DELETE error:", error);
+    return NextResponse.json({ success: false, error: error.message || "Internal Server Error" }, { status: 500 });
+  }
+}

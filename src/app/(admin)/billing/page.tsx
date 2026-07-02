@@ -15,7 +15,8 @@ import {
   Percent,
   Loader2,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from "lucide-react";
 
 interface PaymentTransaction {
@@ -144,6 +145,32 @@ export default function BillingManagementPage() {
       }
     } catch (err: any) {
       alert(err.message || "Error creating coupon");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteCoupon = async (couponId: string) => {
+    if (currentUser?.role !== "FOUNDER") {
+      alert("Forbidden: Only the Founder can delete coupon codes.");
+      return;
+    }
+
+    if (!confirm("Are you sure you want to permanently delete this coupon code? It will cease working immediately.")) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/coupons?id=${couponId}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchData();
+      } else {
+        alert(data.error || "Failed to delete coupon code");
+      }
+    } catch (err: any) {
+      alert(err.message || "Error deleting coupon");
     } finally {
       setLoading(false);
     }
@@ -370,11 +397,23 @@ export default function BillingManagementPage() {
                         <Tag className="w-4 h-4 text-brand-orange" />
                         <h4 className="text-sm font-black tracking-widest text-white uppercase font-mono">{coupon.code}</h4>
                       </div>
-                      <span className={`px-2 py-0.5 rounded text-[8px] font-mono font-bold uppercase ${
-                        coupon.status === "active" ? "bg-emerald-950/20 text-emerald-400 border border-emerald-900/20" : "bg-red-950/20 text-red-500 border border-red-900/20"
-                      }`}>
-                        {coupon.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {currentUser?.role === "FOUNDER" && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCoupon(coupon._id)}
+                            className="text-neutral-605 hover:text-red-500 transition-colors p-1 cursor-pointer"
+                            title="Delete Coupon"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <span className={`px-2 py-0.5 rounded text-[8px] font-mono font-bold uppercase ${
+                          coupon.status === "active" ? "bg-emerald-950/20 text-emerald-400 border border-emerald-900/20" : "bg-red-950/20 text-red-500 border border-red-900/20"
+                        }`}>
+                          {coupon.status}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="space-y-2 text-[10px] font-mono text-neutral-400 border-t border-neutral-900 pt-4">
