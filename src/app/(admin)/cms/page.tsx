@@ -14,7 +14,8 @@ import {
   AlertCircle,
   Star,
   Video,
-  MapPin
+  MapPin,
+  Tag
 } from "lucide-react";
 
 export default function CMSLiveEditorPage() {
@@ -78,6 +79,11 @@ export default function CMSLiveEditorPage() {
     ]
   });
 
+  const [announcement, setAnnouncement] = useState({
+    text: "",
+    active: false
+  });
+
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
@@ -108,6 +114,7 @@ export default function CMSLiveEditorPage() {
           if (section.sectionKey === "contact") setContact(section.content);
           if (section.sectionKey === "testimonials") setTestimonials(section.content);
           if (section.sectionKey === "videos") setVideos(section.content);
+          if (section.sectionKey === "announcement") setAnnouncement(section.content);
           if (section.sectionKey === "locations") {
             if (section.content && Array.isArray(section.content.states)) {
               setLocations(section.content);
@@ -924,6 +931,63 @@ export default function CMSLiveEditorPage() {
               >
                 <Save className="w-3.5 h-3.5" />
                 <span>Save Booking Locations</span>
+              </button>
+            </div>
+          )}
+        </form>
+      </div>
+
+      {/* 8. MARQUEE ANNOUNCEMENT STRIP */}
+      <div className="bg-neutral-950 border border-neutral-900 rounded-3xl p-6 shadow-xl space-y-4">
+        <div className="flex items-center gap-2 border-b border-neutral-900 pb-3">
+          <Tag className="w-4 h-4 text-brand-orange" />
+          <h3 className="text-xs font-black uppercase tracking-wider text-white">Website Marquee Announcement Banner (Offers Strip)</h3>
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleCMSUpdate("announcement", announcement);
+          }}
+          className="space-y-6"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+            <div className="md:col-span-2">
+              <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">Marquee Banner Message *</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. 🎉 Grand Launch Offer: Use code FIRST500 to get ₹500 off on your first booking! | Limited slots available!"
+                value={announcement.text}
+                onChange={(e) => setAnnouncement({ ...announcement, text: e.target.value })}
+                className="w-full bg-black border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange"
+              />
+            </div>
+            <div>
+              <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">Marquee Status</label>
+              <button
+                type="button"
+                onClick={() => setAnnouncement({ ...announcement, active: !announcement.active })}
+                className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
+                  announcement.active
+                    ? "bg-brand-orange text-black font-extrabold shadow-[0_0_15px_rgba(255,122,0,0.2)]"
+                    : "bg-neutral-900 border border-neutral-800 text-neutral-450 hover:text-white"
+                }`}
+              >
+                <span>{announcement.active ? "Active (Displayed on Website)" : "Inactive (Hidden)"}</span>
+              </button>
+            </div>
+          </div>
+
+          {currentUser?.role === "FOUNDER" && (
+            <div className="pt-2 flex justify-end">
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-brand-orange hover:bg-white text-black font-extrabold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Save Announcement Ribbon</span>
               </button>
             </div>
           )}
