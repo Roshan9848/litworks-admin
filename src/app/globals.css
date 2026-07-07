@@ -56,3 +56,15 @@ input:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0px 1000px #000000 inset;
   transition: background-color 5000s ease-in-out 0s;
 }
+
+/* Continuous drifting float loops for creative design */
+@keyframes float {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(25px, -35px) rotate(6deg); }
+  66% { transform: translate(-20px, 20px) rotate(-6deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.anim-float {
+  animation: float 15s ease-in-out infinite;
+}

@@ -7,6 +7,8 @@ export interface IUser extends Document {
   role: "FOUNDER" | "CO-FOUNDER" | "MANAGER" | "EDITOR" | "PHOTOGRAPHER" | "VIDEOGRAPHER" | "INTERN";
   phone?: string;
   status: "active" | "inactive";
+  otp?: string;
+  otpExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,6 +26,8 @@ const UserSchema: Schema = new Schema(
     },
     phone: { type: String },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
+    otp: { type: String },
+    otpExpires: { type: Date },
   },
   { timestamps: true }
 );
