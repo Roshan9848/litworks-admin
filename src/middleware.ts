@@ -9,6 +9,7 @@ export function middleware(req: NextRequest) {
   const isPublicPath =
     pathname === "/login" ||
     pathname.startsWith("/api/auth/login") ||
+    pathname.startsWith("/api/auth/request-otp") ||
     pathname.startsWith("/api/auth/forgot-password") ||
     pathname.startsWith("/api/auth/reset-password") ||
     pathname.startsWith("/api/website-content") ||

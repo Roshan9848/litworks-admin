@@ -247,11 +247,18 @@ export default function LeadsCRMPage() {
 
   // Filters
   const filteredLeads = leads.filter((lead) => {
+    const name = lead.name || "";
+    const email = lead.email || "";
+    const phone = lead.phone || "";
+    const businessName = lead.businessName || "";
+    const service = lead.service || "";
+
     const matchesSearch =
-      lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.phone.includes(searchTerm) ||
-      (lead.businessName && lead.businessName.toLowerCase().includes(searchTerm.toLowerCase()));
+      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesService = selectedService === "All" || lead.service === selectedService;
 

@@ -190,11 +190,24 @@ export default function BookingsManagementPage() {
   };
 
   const filteredBookings = bookings.filter((b) => {
+    const name = b.name || "";
+    const email = b.email || "";
+    const orderId = b.orderId || "";
+    const service = b.service || "";
+    const phone = b.phone || "";
+    const city = b.city || "";
+    const state = b.state || "";
+    const planTitle = b.dynamicFields?.planTitle || "";
+
     const matchesSearch =
-      b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.service.toLowerCase().includes(searchTerm.toLowerCase());
+      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      service.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      state.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      planTitle.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === "All" || b.bookingStatus === statusFilter;
 

@@ -1,27 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
-import bcrypt from "bcryptjs";
 import { signJWT } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
-    const { email, password } = await req.json();
+    const { loginId, otp } = await req.json();
 
-    if (!email || !password) {
-      return NextResponse.json({ success: false, error: "Please enter email and password" }, { status: 400 });
+    if (!loginId || !otp) {
+      return NextResponse.json({ success: false, error: "Please enter email/phone and OTP passcode" }, { status: 400 });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user || user.status !== "active") {
+    const trimmedLogin = loginId.trim();
+
+    // Query user by email or phone
+    const user = await User.findOne({
+      $or: [
+        { email: trimmedLogin.toLowerCase() },
+        { phone: trimmedLogin }
+      ]
+    });
+
+    if (!user) {
       return NextResponse.json({ success: false, error: "Invalid credentials" }, { status: 401 });
     }
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch) {
-      return NextResponse.json({ success: false, error: "Invalid credentials" }, { status: 401 });
+    if (user.status !== "active") {
+      return NextResponse.json({ success: false, error: "Account is inactive" }, { status: 401 });
     }
+
+    // Verify OTP exists and matches
+    if (!user.otp || !user.otpExpires) {
+      return NextResponse.json({ success: false, error: "No active OTP session found. Please request a new code." }, { status: 401 });
+    }
+
+    // Check expiry
+    if (new Date() > new Date(user.otpExpires)) {
+      return NextResponse.json({ success: false, error: "OTP passcode has expired. Please request a new code." }, { status: 401 });
+    }
+
+    // Match OTP
+    if (user.otp !== otp.trim()) {
+      return NextResponse.json({ success: false, error: "Incorrect OTP passcode" }, { status: 401 });
+    }
+
+    // Clear OTP fields upon successful verification
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    await user.save();
 
     const payload = {
       userId: user._id.toString(),
@@ -54,7 +81,7 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (error: any) {
-    console.error("Login API error:", error);
+    console.error("Login verification error:", error);
     return NextResponse.json({ success: false, error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

@@ -260,19 +260,26 @@ export default function ClientsProjectsPage() {
 
   // Filter clients
   const filteredClients = clients.filter((c) => {
+    const name = c.name || "";
+    const email = c.email || "";
+    const companyName = c.companyName || "";
     return (
-      c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
-      c.email.toLowerCase().includes(clientSearch.toLowerCase()) ||
-      (c.companyName && c.companyName.toLowerCase().includes(clientSearch.toLowerCase()))
+      name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+      email.toLowerCase().includes(clientSearch.toLowerCase()) ||
+      companyName.toLowerCase().includes(clientSearch.toLowerCase())
     );
   });
 
   // Filter projects
   const filteredProjects = projects.filter((p) => {
+    const title = p.title || "";
+    const clientName = p.clientId?.name || "";
+    const clientCompany = p.clientId?.companyName || "";
+
     const matchesSearch =
-      p.title.toLowerCase().includes(projectSearch.toLowerCase()) ||
-      p.clientId.name.toLowerCase().includes(projectSearch.toLowerCase()) ||
-      (p.clientId.companyName && p.clientId.companyName.toLowerCase().includes(projectSearch.toLowerCase()));
+      title.toLowerCase().includes(projectSearch.toLowerCase()) ||
+      clientName.toLowerCase().includes(projectSearch.toLowerCase()) ||
+      clientCompany.toLowerCase().includes(projectSearch.toLowerCase());
 
     const matchesStatus = projectStatusFilter === "All" || p.status === projectStatusFilter;
 
