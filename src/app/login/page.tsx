@@ -5,9 +5,17 @@ import { useRouter } from "next/navigation";
 import { Lock, Mail, Loader2, Camera, Film, Scissors, Sliders, Sparkles, Key } from "lucide-react";
 
 export default function LoginPage() {
-  const [loginId, setLoginId] = useState(""); // Email or Mobile number
+  // View states: login | forgot | reset
+  const [view, setView] = useState<"login" | "forgot" | "reset">("login");
+
+  // Form input states
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [resetEmail, setResetEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState<"request" | "verify">("request");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -31,34 +39,7 @@ export default function LoginPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleRequestOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    setSuccessMessage("");
-
-    try {
-      const response = await fetch("/api/auth/request-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ loginId }),
-      });
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "Failed to send OTP");
-      }
-
-      setSuccessMessage(data.message || "Passcode sent successfully to WhatsApp!");
-      setStep("verify");
-    } catch (err: any) {
-      setError(err.message || "Failed to generate OTP. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -68,17 +49,79 @@ export default function LoginPage() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ loginId, otp }),
+        body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || "Verification failed");
+        throw new Error(data.error || "Invalid email or password");
       }
 
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Invalid OTP passcode. Please try again.");
+      setError(err.message || "Failed to log in. Please check your credentials.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccessMessage("");
+
+    try {
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to request recovery passcode");
+      }
+
+      setSuccessMessage("Recovery passcode sent to litworks.media@gmail.com!");
+      setView("reset");
+    } catch (err: any) {
+      setError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccessMessage("");
+
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail, otp, newPassword }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to reset password");
+      }
+
+      setSuccessMessage("Password reset successfully! You can now log in.");
+      setPassword("");
+      setEmail(resetEmail);
+      setView("login");
+    } catch (err: any) {
+      setError(err.message || "Failed to reset password. Check the passcode.");
     } finally {
       setLoading(false);
     }
@@ -159,27 +202,55 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* STEP 1: REQUEST OTP */}
-          {step === "request" && (
-            <form onSubmit={handleRequestOtp} className="space-y-6">
+          {/* VIEW: LOGIN FORM */}
+          {view === "login" && (
+            <form onSubmit={handleLogin} className="space-y-6">
               <div>
                 <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">
-                  Creator Email or Phone
+                  Creative Director Email
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-555 group-hover:text-brand-orange transition-colors" />
                   <input
-                    type="text"
-                    placeholder="e.g. roshan@litworks.media or 91XXXXXXXXXX"
-                    value={loginId}
-                    onChange={(e) => setLoginId(e.target.value)}
+                    type="email"
+                    placeholder="e.g. creator@litworks.media"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                     className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-black border border-neutral-850 focus:outline-none focus:border-brand-orange text-xs text-white transition-colors"
                   />
                 </div>
-                <p className="text-[9px] text-neutral-500 font-mono mt-2 uppercase tracking-wide leading-relaxed">
-                  Enter your email or phone number. We will send a secure OTP key directly to your WhatsApp.
-                </p>
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[9px] uppercase tracking-widest text-neutral-400 font-bold">
+                    Master Passcode
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setResetEmail(email);
+                      setError("");
+                      setSuccessMessage("");
+                      setView("forgot");
+                    }}
+                    className="text-neutral-500 hover:text-brand-orange text-[9px] tracking-wider uppercase font-mono transition-colors duration-200 cursor-pointer"
+                  >
+                    Forgot passcode?
+                  </button>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-555 group-hover:text-brand-orange transition-colors" />
+                  <input
+                    type="password"
+                    placeholder="Your creative keycode"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-black border border-neutral-850 focus:outline-none focus:border-brand-orange text-xs text-white transition-colors"
+                  />
+                </div>
               </div>
 
               <button
@@ -190,18 +261,72 @@ export default function LoginPage() {
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Requesting OTP...</span>
+                    <span>Configuring Workspace...</span>
                   </>
                 ) : (
-                  <span>Send WhatsApp OTP</span>
+                  <span>Initialize Creator Session</span>
                 )}
               </button>
             </form>
           )}
 
-          {/* STEP 2: VERIFY OTP */}
-          {step === "verify" && (
-            <form onSubmit={handleVerifyOtp} className="space-y-6">
+          {/* VIEW: FORGOT PASSWORD FORM */}
+          {view === "forgot" && (
+            <form onSubmit={handleForgotPassword} className="space-y-6">
+              <div>
+                <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">
+                  Reset Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-555 group-hover:text-brand-orange transition-colors" />
+                  <input
+                    type="email"
+                    placeholder="e.g. creator@litworks.media"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                    className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-black border border-neutral-850 focus:outline-none focus:border-brand-orange text-xs text-white transition-colors"
+                  />
+                </div>
+                <p className="text-[10px] text-neutral-500 font-mono mt-2 uppercase tracking-wide leading-relaxed">
+                  The recovery passcode will be sent to the owner's primary email (litworks.media@gmail.com).
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 px-4 rounded-xl bg-brand-orange hover:bg-white text-black font-extrabold text-[10px] sm:text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-lg disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Sending Key...</span>
+                    </>
+                  ) : (
+                    <span>Send Access Key</span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError("");
+                    setSuccessMessage("");
+                    setView("login");
+                  }}
+                  className="w-full py-3 rounded-xl bg-transparent border border-neutral-850 hover:border-neutral-700 text-neutral-400 hover:text-white font-extrabold text-[10px] sm:text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center cursor-pointer"
+                >
+                  Back to Login
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* VIEW: RESET PASSWORD FORM */}
+          {view === "reset" && (
+            <form onSubmit={handleResetPassword} className="space-y-6">
               <div>
                 <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">
                   Enter Secure Access Code
@@ -220,6 +345,40 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">
+                  New Master Passcode
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-555 group-hover:text-brand-orange transition-colors" />
+                  <input
+                    type="password"
+                    placeholder="At least 6 characters"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-black border border-neutral-850 focus:outline-none focus:border-brand-orange text-xs text-white transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">
+                  Confirm New Passcode
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-555 group-hover:text-brand-orange transition-colors" />
+                  <input
+                    type="password"
+                    placeholder="Repeat passcode"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-black border border-neutral-850 focus:outline-none focus:border-brand-orange text-xs text-white transition-colors"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-3">
                 <button
                   type="submit"
@@ -229,10 +388,10 @@ export default function LoginPage() {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Verifying Session...</span>
+                      <span>Saving Passcode...</span>
                     </>
                   ) : (
-                    <span>Confirm OTP & Login</span>
+                    <span>Reset Passcode</span>
                   )}
                 </button>
 
@@ -241,12 +400,11 @@ export default function LoginPage() {
                   onClick={() => {
                     setError("");
                     setSuccessMessage("");
-                    setOtp("");
-                    setStep("request");
+                    setView("login");
                   }}
                   className="w-full py-3 rounded-xl bg-transparent border border-neutral-850 hover:border-neutral-700 text-neutral-400 hover:text-white font-extrabold text-[10px] sm:text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center cursor-pointer"
                 >
-                  Request a new code / Go Back
+                  Back to Login
                 </button>
               </div>
             </form>
