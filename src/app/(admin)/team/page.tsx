@@ -165,6 +165,32 @@ export default function TeamManagementPage() {
     });
   };
 
+  const handleDeleteMember = async (memberId: string) => {
+    if (currentUser?.role !== "FOUNDER") {
+      alert("Forbidden: Only the Founder can delete team members.");
+      return;
+    }
+
+    if (!confirm("Are you sure you want to permanently delete this team member? This action is permanent and cannot be undone.")) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/team/${memberId}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchData();
+      } else {
+        alert(data.error || "Failed to delete team member");
+      }
+    } catch (err: any) {
+      alert(err.message || "Error deleting team member");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const openEditModal = (member: TeamMember) => {
     setSelectedMember(member);
     setEditForm({
@@ -284,6 +310,13 @@ export default function TeamManagementPage() {
                   >
                     <Edit2 className="w-3.5 h-3.5 text-brand-orange" />
                     <span>Edit Profile</span>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteMember(member._id)}
+                    className="flex items-center justify-center py-2 px-3 rounded-lg bg-neutral-950 border border-neutral-900 hover:border-red-950 hover:bg-red-950/20 text-neutral-600 hover:text-red-500 transition-colors cursor-pointer"
+                    title="Delete Employee"
+                  >
+                    <UserX className="w-3.5 h-3.5" />
                   </button>
                 </div>
               )}

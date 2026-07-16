@@ -129,11 +129,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     <div className="min-h-screen bg-black flex text-white relative">
       {/* SIDEBAR - Desktop */}
       <aside className="hidden lg:flex flex-col w-64 bg-neutral-950 border-r border-neutral-900 flex-shrink-0">
-        <div className="p-6 border-b border-neutral-900">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <h1 className="text-xl font-black uppercase tracking-wider text-white">
-              LIT<span className="text-brand-orange">WORKS</span>
-            </h1>
+        <div className="p-6 border-b border-neutral-900 flex justify-center">
+          <Link href="/dashboard">
+            <img src="/logo.png" alt="LITWORKS Logo" className="h-7 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(255,122,0,0.35)]" />
           </Link>
         </div>
 
@@ -187,9 +185,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           
           <aside className="relative flex flex-col w-64 bg-neutral-950 border-r border-neutral-900 z-10">
             <div className="p-6 border-b border-neutral-900 flex justify-between items-center">
-              <h1 className="text-xl font-black uppercase tracking-wider text-white">
-                LIT<span className="text-brand-orange">WORKS</span>
-              </h1>
+              <Link href="/dashboard" onClick={() => setSidebarOpen(false)}>
+                <img src="/logo.png" alt="LITWORKS Logo" className="h-7 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(255,122,0,0.35)]" />
+              </Link>
               <button onClick={() => setSidebarOpen(false)} className="text-neutral-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>

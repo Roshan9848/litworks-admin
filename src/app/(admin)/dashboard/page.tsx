@@ -95,6 +95,142 @@ export default function DashboardPage() {
     }).format(val);
   };
 
+  if (data.isEmployee) {
+    return (
+      <div className="space-y-8 animate-fadeIn">
+        {/* Welcome header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-black uppercase tracking-wider text-white">
+              Creator <span className="text-brand-orange">Console</span>
+            </h1>
+            <p className="text-xs text-neutral-400 mt-1 uppercase tracking-wider font-mono">
+              Your Personal Deliveries, Completed Shoots & Earnings Summary
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <div className="px-3 py-1.5 rounded-lg bg-neutral-950 border border-neutral-900 text-[10px] font-mono text-neutral-400">
+              Session: Active
+            </div>
+          </div>
+        </div>
+
+        {/* Grid: Employee-style KPI cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {/* Completed Projects */}
+          <div className="relative group overflow-hidden bg-neutral-950 border border-neutral-900 hover:border-brand-orange/40 rounded-2xl p-6 transition-all duration-300 shadow-[0_4px_30px_rgba(0,0,0,0.4)]">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-brand-orange/5 rounded-bl-full blur-2xl group-hover:bg-brand-orange/10 transition-all" />
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest font-mono">
+                  Completed Shoots
+                </p>
+                <h3 className="text-2xl font-black mt-2 text-white font-sans">
+                  {data.metrics.completedProjectsCount}
+                </h3>
+              </div>
+              <div className="p-2 rounded-lg bg-brand-orange/10 border border-brand-orange/20 text-brand-orange">
+                <Briefcase className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center gap-1.5 text-[10px] text-emerald-500 font-mono">
+              <span>All deliverables uploaded successfully</span>
+            </div>
+          </div>
+
+          {/* Active Projects */}
+          <div className="relative group overflow-hidden bg-neutral-950 border border-neutral-900 hover:border-brand-orange/40 rounded-2xl p-6 transition-all duration-300 shadow-[0_4px_30px_rgba(0,0,0,0.4)]">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-brand-orange/5 rounded-bl-full blur-2xl group-hover:bg-brand-orange/10 transition-all" />
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest font-mono">
+                  Active Shoots
+                </p>
+                <h3 className="text-2xl font-black mt-2 text-white font-sans">
+                  {data.metrics.activeProjectsCount}
+                </h3>
+              </div>
+              <div className="p-2 rounded-lg bg-brand-orange/10 border border-brand-orange/20 text-brand-orange">
+                <Calendar className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center gap-1.5 text-[10px] text-neutral-400 font-mono">
+              <span>Ongoing filming & editing workloads</span>
+            </div>
+          </div>
+
+          {/* Total Money Earned */}
+          <div className="relative group overflow-hidden bg-brand-orange/5 border border-brand-orange/25 hover:border-brand-orange/50 rounded-2xl p-6 transition-all duration-300 shadow-[0_4px_30px_rgba(0,0,0,0.4)]">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-brand-orange/10 rounded-bl-full blur-2xl transition-all" />
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[10px] font-bold text-brand-orange/80 uppercase tracking-widest font-mono">
+                  Earnings (30% Share)
+                </p>
+                <h3 className="text-2xl font-black mt-2 text-white font-mono">
+                  {formatCurrency(data.metrics.totalMoneyEarned)}
+                </h3>
+              </div>
+              <div className="p-2 rounded-lg bg-brand-orange text-black">
+                <DollarSign className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-4 flex items-center gap-1.5 text-[10px] text-brand-orange font-mono font-bold uppercase tracking-wider">
+              <span>Payable upon complete project closure</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Assigned Projects List */}
+        <div className="bg-neutral-950 border border-neutral-900 rounded-3xl p-6 shadow-xl">
+          <h3 className="text-xs font-black uppercase tracking-widest text-neutral-400 border-b border-neutral-900 pb-3 mb-4">
+            Recent Work Assignments
+          </h3>
+          {data.recentProjects.length === 0 ? (
+            <p className="text-xs text-neutral-500 font-mono uppercase tracking-wider py-8 text-center">
+              No project assignments found in registry
+            </p>
+          ) : (
+            <div className="overflow-x-auto no-scrollbar">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-neutral-900 text-[10px] text-neutral-500 font-bold uppercase tracking-wider">
+                    <th className="pb-3">Project Title</th>
+                    <th className="pb-3">Work Status</th>
+                    <th className="pb-3">Deadline</th>
+                    <th className="pb-3">Deliverables</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-900/60 text-[11px] font-mono text-neutral-300">
+                  {data.recentProjects.map((proj: any) => (
+                    <tr key={proj._id} className="hover:bg-neutral-900/20 transition-colors">
+                      <td className="py-3.5 font-bold text-white max-w-xs truncate">{proj.title}</td>
+                      <td className="py-3.5">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
+                          proj.status === "Completed"
+                            ? "bg-emerald-950/20 text-emerald-450 border border-emerald-900/40"
+                            : proj.status === "Editing"
+                            ? "bg-amber-950/20 text-amber-450 border border-amber-900/40"
+                            : "bg-neutral-900 text-neutral-400 border border-neutral-800"
+                        }`}>
+                          {proj.status}
+                        </span>
+                      </td>
+                      <td className="py-3.5 text-neutral-450">
+                        {proj.deadline ? new Date(proj.deadline).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "No deadline"}
+                      </td>
+                      <td className="py-3.5 text-neutral-450">{proj.deliverablesCount} Uploads</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Welcome header */}

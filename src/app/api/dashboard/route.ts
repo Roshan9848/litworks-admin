@@ -15,7 +15,62 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    // 1. Core KPIs
+    // Check if the user is a standard crew employee (Videographer, Photographer, Editor, Intern)
+    const isEmployee = !["FOUNDER", "CO-FOUNDER", "MANAGER"].includes(user.role);
+
+    if (isEmployee) {
+      const mongoose = require("mongoose");
+      const userObjectId = new mongoose.Types.ObjectId(user.userId);
+
+      // Find all projects assigned to this user
+      const employeeProjects = await Project.find({ assignedTeam: userObjectId }).populate("bookingId");
+
+      const completedProjects = employeeProjects.filter((p) => p.status === "Completed");
+      const activeProjectsCount = employeeProjects.filter((p) => p.status !== "Completed").length;
+      const completedProjectsCount = completedProjects.length;
+
+      // Calculate money earned (30% commission of the project's booking price)
+      let totalMoneyEarned = 0;
+      for (const proj of completedProjects) {
+        let priceVal = 2500; // Base fallback rate per completed project
+        if (proj.bookingId && typeof proj.bookingId === "object") {
+          const booking: any = proj.bookingId;
+          const totalStr = booking.dynamicFields?.calculatedTotalPrice || booking.dynamicFields?.bookingDepositPaid;
+          if (totalStr) {
+            const parsed = parseFloat(totalStr.toString().replace(/[^0-9.]/g, ""));
+            if (!isNaN(parsed) && parsed > 0) {
+              priceVal = Math.round(parsed * 0.3); // 30% flat commission rate
+            }
+          }
+        }
+        totalMoneyEarned += priceVal;
+      }
+
+      // Recent assigned projects
+      const recentProjects = employeeProjects
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 5)
+        .map((p) => ({
+          _id: p._id,
+          title: p.title,
+          status: p.status,
+          deadline: p.deadline,
+          deliverablesCount: p.deliverables?.length || 0,
+        }));
+
+      return NextResponse.json({
+        success: true,
+        isEmployee: true,
+        metrics: {
+          completedProjectsCount,
+          activeProjectsCount,
+          totalMoneyEarned,
+        },
+        recentProjects,
+      });
+    }
+
+    // 1. Core KPIs (For Founder, Co-Founder, Manager)
     // Total Revenue
     const payments = await Payment.find({ status: "captured" });
     const totalRevenue = payments.reduce((acc, curr) => acc + curr.amount, 0);

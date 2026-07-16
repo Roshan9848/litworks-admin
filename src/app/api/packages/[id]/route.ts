@@ -15,9 +15,9 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    // Only Founder can modify packages
-    if (user.role !== "FOUNDER") {
-      return NextResponse.json({ success: false, error: "Forbidden: Only the Founder can manage packages" }, { status: 403 });
+    // Only Founder, Co-Founder, and Manager can modify packages
+    if (user.role !== "FOUNDER" && user.role !== "CO-FOUNDER" && user.role !== "MANAGER") {
+      return NextResponse.json({ success: false, error: "Forbidden: Unauthorized to manage packages" }, { status: 403 });
     }
 
     const { id } = await params;
@@ -67,9 +67,9 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    // Only Founder can delete packages
-    if (user.role !== "FOUNDER") {
-      return NextResponse.json({ success: false, error: "Forbidden: Only the Founder can manage packages" }, { status: 403 });
+    // Only Founder, Co-Founder, and Manager can delete packages
+    if (user.role !== "FOUNDER" && user.role !== "CO-FOUNDER" && user.role !== "MANAGER") {
+      return NextResponse.json({ success: false, error: "Forbidden: Unauthorized to manage packages" }, { status: 403 });
     }
 
     const { id } = await params;

@@ -76,6 +76,56 @@ export default function BookingsManagementPage() {
   // Assignment states
   const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
 
+  // Link generation states
+  const [generatingLink, setGeneratingLink] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState("");
+
+  const generateCustomPaymentLink = async (booking: Booking) => {
+    setGeneratingLink(true);
+    setGeneratedLink("");
+
+    try {
+      const priceVal = parseFloat(
+        booking.dynamicFields?.calculatedTotalPrice?.toString().replace(/[^0-9.]/g, "") ||
+        booking.dynamicFields?.bookingDepositPaid?.toString().replace(/[^0-9.]/g, "") ||
+        "0"
+      );
+
+      const payload = {
+        title: `Custom Package - ${booking.name}`,
+        price: priceVal || 2999,
+        description: `Custom package for ${booking.service} shoot requested by ${booking.name}.`,
+        serviceType: booking.service || "Video Production",
+        category: "custom",
+        isBestseller: false,
+        features: [
+          `Service: ${booking.service}`,
+          `Client: ${booking.name}`,
+          `Date: ${booking.dynamicFields?.preferredDate || "TBD"}`,
+          `Time Slot: ${booking.dynamicFields?.timeSlot || "TBD"}`
+        ]
+      };
+
+      const res = await fetch("/api/packages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.success && data.package) {
+        const link = `https://litworks.agency/pricing?packageId=${data.package._id}`;
+        setGeneratedLink(link);
+      } else {
+        alert(data.error || "Failed to generate proposal package");
+      }
+    } catch (err: any) {
+      alert(err.message || "Error generating payment link");
+    } finally {
+      setGeneratingLink(false);
+    }
+  };
+
   useEffect(() => {
     fetchBookings();
     fetchTeam();
@@ -398,6 +448,7 @@ export default function BookingsManagementPage() {
               onClick={() => {
                 setShowDetailsModal(false);
                 setSelectedBooking(null);
+                setGeneratedLink("");
               }}
               className="absolute right-6 top-6 text-neutral-400 hover:text-white transition-colors cursor-pointer"
             >
@@ -503,6 +554,44 @@ export default function BookingsManagementPage() {
                       </div>
                     )}
                   </div>
+
+                  {selectedBooking.paymentStatus === "pending" && (
+                    <div className="mt-4 border-t border-neutral-900 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => generateCustomPaymentLink(selectedBooking)}
+                        disabled={generatingLink}
+                        className="w-full py-2.5 px-4 rounded-xl bg-brand-orange hover:bg-white text-black font-extrabold text-[10px] uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-lg disabled:opacity-50"
+                      >
+                        {generatingLink ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          "Generate Payment Link"
+                        )}
+                      </button>
+
+                      {generatedLink && (
+                        <div className="mt-3 p-2.5 rounded-xl bg-neutral-950 border border-neutral-900 flex items-center justify-between gap-2">
+                          <input
+                            type="text"
+                            readOnly
+                            value={generatedLink}
+                            className="bg-black border border-neutral-850 px-2.5 py-1.5 rounded-lg text-[9px] text-white flex-1 focus:outline-none font-mono"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(generatedLink);
+                              alert("Payment link copied to clipboard!");
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-brand-orange hover:bg-white text-black text-[9px] font-bold uppercase transition-colors cursor-pointer"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="bg-black border border-neutral-900 p-4.5 rounded-2xl">

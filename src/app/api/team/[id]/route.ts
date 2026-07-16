@@ -55,3 +55,48 @@ export async function PATCH(
     return NextResponse.json({ success: false, error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await connectDB();
+    const user = getAuthUser(req);
+    if (!user) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (user.role !== "FOUNDER") {
+      return NextResponse.json({ success: false, error: "Forbidden: Founder access required" }, { status: 403 });
+    }
+
+    const { id } = await params;
+    
+    // Prevent Founder from deleting themselves
+    if (id === user.userId) {
+      return NextResponse.json({ success: false, error: "Forbidden: You cannot delete your own founder account" }, { status: 400 });
+    }
+
+    const deletedUser = await User.findByIdAndDelete(id);
+    if (!deletedUser) {
+      return NextResponse.json({ success: false, error: "Team member not found" }, { status: 404 });
+    }
+
+    const userRes = JSON.parse(JSON.stringify(deletedUser));
+    delete userRes.passwordHash;
+
+    await AuditLog.create({
+      userId: user.userId,
+      userName: user.name,
+      userEmail: user.email,
+      action: `Delete Team Member ${id}`,
+      oldValue: userRes,
+    });
+
+    return NextResponse.json({ success: true, message: "Team member deleted successfully" });
+  } catch (error: any) {
+    console.error("Team DELETE error:", error);
+    return NextResponse.json({ success: false, error: error.message || "Internal Server Error" }, { status: 500 });
+  }
+}

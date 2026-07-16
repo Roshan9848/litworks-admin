@@ -96,8 +96,8 @@ export default function PackagesManagementPage() {
 
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (currentUser?.role !== "FOUNDER") {
-      alert("Forbidden: Only the Founder can manage packages.");
+    if (currentUser?.role !== "FOUNDER" && currentUser?.role !== "CO-FOUNDER" && currentUser?.role !== "MANAGER") {
+      alert("Forbidden: Only authorized roles can manage packages.");
       return;
     }
 
@@ -135,8 +135,8 @@ export default function PackagesManagementPage() {
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPackage) return;
-    if (currentUser?.role !== "FOUNDER") {
-      alert("Forbidden: Only the Founder can manage packages.");
+    if (currentUser?.role !== "FOUNDER" && currentUser?.role !== "CO-FOUNDER" && currentUser?.role !== "MANAGER") {
+      alert("Forbidden: Only authorized roles can manage packages.");
       return;
     }
 
@@ -172,8 +172,8 @@ export default function PackagesManagementPage() {
   };
 
   const togglePackageStatus = async (pkg: Package) => {
-    if (currentUser?.role !== "FOUNDER") {
-      alert("Forbidden: Only the Founder can toggle package status.");
+    if (currentUser?.role !== "FOUNDER" && currentUser?.role !== "CO-FOUNDER" && currentUser?.role !== "MANAGER") {
+      alert("Forbidden: Only authorized roles can toggle package status.");
       return;
     }
 
@@ -198,8 +198,8 @@ export default function PackagesManagementPage() {
   };
 
   const handleDeletePackage = async (pkgId: string) => {
-    if (currentUser?.role !== "FOUNDER") {
-      alert("Forbidden: Only the Founder can delete packages.");
+    if (currentUser?.role !== "FOUNDER" && currentUser?.role !== "CO-FOUNDER" && currentUser?.role !== "MANAGER") {
+      alert("Forbidden: Only authorized roles can delete packages.");
       return;
     }
 
@@ -305,7 +305,7 @@ export default function PackagesManagementPage() {
             Control service packages and plans rendering live on the main litworks website
           </p>
         </div>
-        {currentUser?.role === "FOUNDER" && (
+        {["FOUNDER", "CO-FOUNDER", "MANAGER"].includes(currentUser?.role) && (
           <button
             onClick={openAddModal}
             className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-brand-orange text-black font-extrabold text-xs uppercase tracking-wider hover:bg-white transition-all cursor-pointer shadow-[0_0_15px_rgba(255,122,0,0.2)]"
@@ -471,7 +471,7 @@ export default function PackagesManagementPage() {
                   </ul>
                 </div>
 
-                {currentUser?.role === "FOUNDER" && (
+                {["FOUNDER", "CO-FOUNDER", "MANAGER"].includes(currentUser?.role) && (
                   <div className="mt-6 pt-4 border-t border-neutral-900 flex gap-2">
                     <button
                       onClick={() => openEditModal(pkg)}
@@ -579,7 +579,7 @@ export default function PackagesManagementPage() {
                       <span>{copiedId === pkg._id ? "Copied Proposal Link!" : "Copy Proposal Link"}</span>
                     </button>
 
-                    {currentUser?.role === "FOUNDER" && (
+                    {["FOUNDER", "CO-FOUNDER", "MANAGER"].includes(currentUser?.role) && (
                       <div className="pt-2 border-t border-neutral-900/60 flex gap-2">
                         <button
                           type="button"
