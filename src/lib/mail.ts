@@ -84,7 +84,7 @@ export async function sendOTPEmail(email: string, otp: string, requestUserEmail?
       </head>
       <body>
         <div class="container">
-          <div class="logo">LIT<span class="orange">WORKS</span></div>
+          <img src="https://litworks.agency/logo.png" alt="LITWORKS" style="height: 38px; width: auto; display: block; margin: 0 auto 24px;" />
           <h2>Access Key Request</h2>
           <p>Hello,<br>We received a passcode reset request for the account: <strong>${requestUserEmail || "Unknown"}</strong> on the LITWORKS Admin Terminal. Use the secure access code below to complete the reset:</p>
           <div class="otp-code">${otp}</div>
