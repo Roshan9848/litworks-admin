@@ -19,7 +19,7 @@ export interface IBooking extends Document {
     planTitle?: string;
     bookingDepositPaid?: string;
   };
-  paymentStatus: "pending" | "paid" | "failed";
+  paymentStatus: "pending" | "paid" | "failed" | "custom_pending";
   transactionId?: string;
   paymentConfirmedAmount?: number;
   paymentConfirmedAt?: Date;
@@ -49,7 +49,7 @@ const BookingSchema: Schema = new Schema(
       planTitle: { type: String },
       bookingDepositPaid: { type: String },
     },
-    paymentStatus: { type: String, enum: ["pending", "paid", "failed"], default: "pending" },
+    paymentStatus: { type: String, enum: ["pending", "paid", "failed", "custom_pending"], default: "pending" },
     transactionId: { type: String },
     paymentConfirmedAmount: { type: Number },
     paymentConfirmedAt: { type: Date },

@@ -37,7 +37,7 @@ interface Booking {
     planTitle?: string;
     bookingDepositPaid?: string;
   };
-  paymentStatus: "pending" | "paid" | "failed";
+  paymentStatus: "pending" | "paid" | "failed" | "custom_pending";
   transactionId?: string;
   paymentConfirmedAmount?: number;
   paymentConfirmedAt?: string;
@@ -59,7 +59,7 @@ interface TeamMember {
 }
 
 const BOOKING_STATUSES = ["Pending", "Confirmed", "Scheduled", "Editing", "Delivered", "Completed"];
-const PAYMENT_STATUSES = ["pending", "paid", "failed"];
+const PAYMENT_STATUSES = ["pending", "paid", "failed", "custom_pending"];
 
 export default function BookingsManagementPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -393,12 +393,14 @@ export default function BookingsManagementPage() {
                               ? "border-emerald-900 text-emerald-400"
                               : b.paymentStatus === "failed"
                               ? "border-red-900 text-red-400"
+                              : b.paymentStatus === "custom_pending"
+                              ? "border-brand-orange text-brand-orange"
                               : "border-neutral-800 text-neutral-400"
                           }`}
                         >
                           {PAYMENT_STATUSES.map((status) => (
                             <option key={status} value={status}>
-                              {status.toUpperCase()}
+                              {status.toUpperCase().replace("_", " ")}
                             </option>
                           ))}
                         </select>
