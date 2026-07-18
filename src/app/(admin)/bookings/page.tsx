@@ -158,6 +158,17 @@ export default function BookingsManagementPage() {
   };
 
   const handleStatusChange = async (bookingId: string, bookingStatus: string) => {
+    const originalBookings = [...bookings];
+    const originalSelected = selectedBooking ? { ...selectedBooking } : null;
+
+    // Optimistically update UI state instantly
+    setBookings((prev) =>
+      prev.map((b) => (b._id === bookingId ? { ...b, bookingStatus: bookingStatus as Booking["bookingStatus"] } : b))
+    );
+    if (selectedBooking?._id === bookingId) {
+      setSelectedBooking((prev: any) => ({ ...prev, bookingStatus }));
+    }
+
     try {
       const res = await fetch(`/api/bookings/${bookingId}`, {
         method: "PATCH",
@@ -165,22 +176,30 @@ export default function BookingsManagementPage() {
         body: JSON.stringify({ bookingStatus })
       });
       const data = await res.json();
-      if (data.success) {
-        setBookings((prev) =>
-          prev.map((b) => (b._id === bookingId ? { ...b, bookingStatus: bookingStatus as Booking["bookingStatus"] } : b))
-        );
-        if (selectedBooking?._id === bookingId) {
-          setSelectedBooking((prev: any) => ({ ...prev, bookingStatus }));
-        }
-      } else {
+      if (!data.success) {
         alert(data.error || "Failed to update status");
+        setBookings(originalBookings);
+        if (originalSelected) setSelectedBooking(originalSelected);
       }
     } catch (err: any) {
       alert(err.message || "Error updating booking status");
+      setBookings(originalBookings);
+      if (originalSelected) setSelectedBooking(originalSelected);
     }
   };
 
   const handlePaymentStatusChange = async (bookingId: string, paymentStatus: string) => {
+    const originalBookings = [...bookings];
+    const originalSelected = selectedBooking ? { ...selectedBooking } : null;
+
+    // Optimistically update UI state instantly
+    setBookings((prev) =>
+      prev.map((b) => (b._id === bookingId ? { ...b, paymentStatus: paymentStatus as Booking["paymentStatus"] } : b))
+    );
+    if (selectedBooking?._id === bookingId) {
+      setSelectedBooking((prev: any) => ({ ...prev, paymentStatus }));
+    }
+
     try {
       const res = await fetch(`/api/bookings/${bookingId}`, {
         method: "PATCH",
@@ -188,18 +207,15 @@ export default function BookingsManagementPage() {
         body: JSON.stringify({ paymentStatus })
       });
       const data = await res.json();
-      if (data.success) {
-        setBookings((prev) =>
-          prev.map((b) => (b._id === bookingId ? { ...b, paymentStatus: paymentStatus as Booking["paymentStatus"] } : b))
-        );
-        if (selectedBooking?._id === bookingId) {
-          setSelectedBooking((prev: any) => ({ ...prev, paymentStatus }));
-        }
-      } else {
+      if (!data.success) {
         alert(data.error || "Failed to update payment status");
+        setBookings(originalBookings);
+        if (originalSelected) setSelectedBooking(originalSelected);
       }
     } catch (err: any) {
       alert(err.message || "Error updating payment status");
+      setBookings(originalBookings);
+      if (originalSelected) setSelectedBooking(originalSelected);
     }
   };
 
