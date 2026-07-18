@@ -202,6 +202,13 @@ export default function CMSLiveEditorPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Check file format compatibility (block .mov files and alert)
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    if (fileExtension === 'mov' || file.type === 'video/quicktime') {
+      alert("⚠️ COMPATIBILITY WARNING:\nYou selected a .mov (QuickTime) video file. \n\n.mov files do not play on Windows or Android browsers. For your website visitors to see the video, please convert this file to .mp4 before uploading.");
+      return;
+    }
+
     if (file.size > 150 * 1024 * 1024) {
       alert("File is too large. Max size allowed is 150MB.");
       return;
@@ -848,7 +855,7 @@ export default function CMSLiveEditorPage() {
                           <input
                             type="file"
                             disabled={uploadingSlots[idx]}
-                            accept="video/mp4,video/quicktime,video/webm"
+                            accept="video/mp4,video/webm"
                             className="hidden"
                             onChange={(e) => handleFileUpload(idx, e)}
                           />
