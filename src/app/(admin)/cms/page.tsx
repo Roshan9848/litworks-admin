@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { upload } from "@vercel/blob/client";
 import {
   FileText,
   Save,
@@ -194,6 +195,31 @@ export default function CMSLiveEditorPage() {
   const removeTestimonialItem = (index: number) => {
     const nextItems = testimonials.items.filter((_, i) => i !== index);
     setTestimonials({ ...testimonials, items: nextItems });
+  };
+  const [uploadingSlots, setUploadingSlots] = useState<Record<number, boolean>>({});
+
+  const handleFileUpload = async (idx: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 150 * 1024 * 1024) {
+      alert("File is too large. Max size allowed is 150MB.");
+      return;
+    }
+
+    setUploadingSlots((prev) => ({ ...prev, [idx]: true }));
+    try {
+      const newBlob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      });
+      handleVideoChange(idx, "url", newBlob.url);
+      alert(`Video uploaded successfully!`);
+    } catch (err: any) {
+      alert(err.message || "Failed to upload video to Vercel Blob.");
+    } finally {
+      setUploadingSlots((prev) => ({ ...prev, [idx]: false }));
+    }
   };
 
   // Video handlers
@@ -800,14 +826,34 @@ export default function CMSLiveEditorPage() {
                     </div>
                     <div>
                       <label className="block text-[8px] uppercase tracking-widest text-neutral-455 font-bold mb-1">Direct Video MP4 URL</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="https://example.com/video.mp4"
-                        value={item.url}
-                        onChange={(e) => handleVideoChange(idx, "url", e.target.value)}
-                        className="w-full bg-neutral-950 border border-neutral-900 rounded-lg px-3 py-2 text-[10px] text-white focus:outline-none focus:border-brand-orange font-mono"
-                      />
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          required
+                          placeholder="https://example.com/video.mp4"
+                          value={item.url}
+                          onChange={(e) => handleVideoChange(idx, "url", e.target.value)}
+                          className="flex-1 bg-neutral-950 border border-neutral-900 rounded-lg px-3 py-2 text-[10px] text-white focus:outline-none focus:border-brand-orange font-mono"
+                        />
+                        <label className={`px-2.5 py-2.5 rounded-lg border text-[8px] font-black uppercase tracking-wider cursor-pointer flex items-center justify-center transition-all duration-200 select-none min-w-[85px] ${
+                          uploadingSlots[idx] 
+                            ? "bg-neutral-900 border-neutral-850 text-neutral-500 cursor-not-allowed" 
+                            : "bg-neutral-900 border-neutral-800 hover:border-brand-orange text-white hover:text-brand-orange active:scale-95"
+                        }`}>
+                          {uploadingSlots[idx] ? (
+                            <Loader2 className="w-3 h-3 animate-spin text-brand-orange" />
+                          ) : (
+                            "Upload MP4"
+                          )}
+                          <input
+                            type="file"
+                            disabled={uploadingSlots[idx]}
+                            accept="video/mp4,video/quicktime,video/webm"
+                            className="hidden"
+                            onChange={(e) => handleFileUpload(idx, e)}
+                          />
+                        </label>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-[8px] uppercase tracking-widest text-neutral-455 font-bold mb-1">Instagram Link (Optional)</label>
