@@ -37,7 +37,7 @@ export default function PackagesManagementPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const copyProposalLink = (pkgId: string) => {
-    const link = `https://litworks.agency/pricing?packageId=${pkgId}`;
+    const link = `https://litworks.media/pricing?packageId=${pkgId}`;
     navigator.clipboard.writeText(link);
     setCopiedId(pkgId);
     setTimeout(() => setCopiedId(null), 3000);

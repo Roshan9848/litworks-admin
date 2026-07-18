@@ -114,7 +114,7 @@ export default function BookingsManagementPage() {
       const data = await res.json();
 
       if (data.success && data.package) {
-        const link = `https://litworks.agency/pricing?packageId=${data.package._id}`;
+        const link = `https://litworks.media/pricing?packageId=${data.package._id}`;
         setGeneratedLink(link);
       } else {
         alert(data.error || "Failed to generate proposal package");

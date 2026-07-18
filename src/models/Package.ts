@@ -8,7 +8,7 @@ export interface IPackage extends Document {
   features: string[];
   serviceType: string; // e.g. "Instant Reel", "Wedding Instant Reel"
   isBestseller: boolean;
-  category: "basic" | "wedding";
+  category: "basic" | "wedding" | "custom";
   status: "active" | "inactive";
   createdAt: Date;
   updatedAt: Date;
@@ -23,7 +23,7 @@ const PackageSchema: Schema = new Schema(
     features: [{ type: String }],
     serviceType: { type: String, required: true },
     isBestseller: { type: Boolean, default: false },
-    category: { type: String, enum: ["basic", "wedding"], required: true, index: true },
+    category: { type: String, enum: ["basic", "wedding", "custom"], required: true, index: true },
     status: { type: String, enum: ["active", "inactive"], default: "active" },
   },
   { timestamps: true }
