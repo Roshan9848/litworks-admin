@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useDeferredValue } from "react";
 import {
   Calendar,
   Search,
@@ -255,30 +255,36 @@ export default function BookingsManagementPage() {
     );
   };
 
-  const filteredBookings = bookings.filter((b) => {
-    const name = b.name || "";
-    const email = b.email || "";
-    const orderId = b.orderId || "";
-    const service = b.service || "";
-    const phone = b.phone || "";
-    const city = b.city || "";
-    const state = b.state || "";
-    const planTitle = b.dynamicFields?.planTitle || "";
+  const deferredSearchTerm = useDeferredValue(searchTerm);
 
-    const matchesSearch =
-      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      state.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      planTitle.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredBookings = useMemo(() => {
+    const term = deferredSearchTerm.toLowerCase().trim();
+    return bookings.filter((b) => {
+      const name = b.name || "";
+      const email = b.email || "";
+      const orderId = b.orderId || "";
+      const service = b.service || "";
+      const phone = b.phone || "";
+      const city = b.city || "";
+      const state = b.state || "";
+      const planTitle = b.dynamicFields?.planTitle || "";
 
-    const matchesStatus = statusFilter === "All" || b.bookingStatus === statusFilter;
+      const matchesSearch =
+        !term ||
+        name.toLowerCase().includes(term) ||
+        email.toLowerCase().includes(term) ||
+        orderId.toLowerCase().includes(term) ||
+        service.toLowerCase().includes(term) ||
+        phone.toLowerCase().includes(term) ||
+        city.toLowerCase().includes(term) ||
+        state.toLowerCase().includes(term) ||
+        planTitle.toLowerCase().includes(term);
 
-    return matchesSearch && matchesStatus;
-  });
+      const matchesStatus = statusFilter === "All" || b.bookingStatus === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [bookings, deferredSearchTerm, statusFilter]);
 
   const formatCurrency = (val?: string) => {
     if (!val) return "—";

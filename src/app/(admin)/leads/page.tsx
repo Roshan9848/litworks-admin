@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useDeferredValue } from "react";
 import {
   Users,
   Plus,
@@ -228,6 +228,9 @@ export default function LeadsCRMPage() {
   };
 
   const updateLeadStatusQuick = async (lead: Lead, status: Lead["status"]) => {
+    const originalLeads = [...leads];
+    setLeads((prev) => prev.map((l) => (l._id === lead._id ? { ...l, status } : l)));
+
     try {
       const res = await fetch(`/api/leads/${lead._id}`, {
         method: "PATCH",
@@ -235,35 +238,42 @@ export default function LeadsCRMPage() {
         body: JSON.stringify({ status })
       });
       const data = await res.json();
-      if (data.success) {
-        fetchLeads();
-      } else {
+      if (!data.success) {
+        setLeads(originalLeads);
         alert(data.error || "Failed to update status");
       }
     } catch (e) {
+      setLeads(originalLeads);
       console.error(e);
     }
   };
 
-  // Filters
-  const filteredLeads = leads.filter((lead) => {
-    const name = lead.name || "";
-    const email = lead.email || "";
-    const phone = lead.phone || "";
-    const businessName = lead.businessName || "";
-    const service = lead.service || "";
+  // Deferred Search Term for buttery 60fps typing performance
+  const deferredSearchTerm = useDeferredValue(searchTerm);
 
-    const matchesSearch =
-      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      service.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filters (Memoized)
+  const filteredLeads = useMemo(() => {
+    const term = deferredSearchTerm.toLowerCase().trim();
+    return leads.filter((lead) => {
+      const name = lead.name || "";
+      const email = lead.email || "";
+      const phone = lead.phone || "";
+      const businessName = lead.businessName || "";
+      const service = lead.service || "";
 
-    const matchesService = selectedService === "All" || lead.service === selectedService;
+      const matchesSearch =
+        !term ||
+        name.toLowerCase().includes(term) ||
+        email.toLowerCase().includes(term) ||
+        phone.toLowerCase().includes(term) ||
+        businessName.toLowerCase().includes(term) ||
+        service.toLowerCase().includes(term);
 
-    return matchesSearch && matchesService;
-  });
+      const matchesService = selectedService === "All" || lead.service === selectedService;
+
+      return matchesSearch && matchesService;
+    });
+  }, [leads, deferredSearchTerm, selectedService]);
 
   const servicesList = ["All", ...Array.from(new Set(leads.map((l) => l.service)))];
 

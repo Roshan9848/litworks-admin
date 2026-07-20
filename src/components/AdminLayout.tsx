@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -99,6 +99,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
   };
 
+  // Sidebar Menu Items filtered by User Role Permissions (Memoized for high 60fps performance)
+  const allowedMenuItems = useMemo(() => {
+    if (!user) return [];
+    const menuItems = [
+      { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["FOUNDER", "CO-FOUNDER", "MANAGER", "EDITOR", "PHOTOGRAPHER", "VIDEOGRAPHER"] },
+      { name: "Leads CRM", href: "/leads", icon: Users, roles: ["FOUNDER", "CO-FOUNDER", "MANAGER"] },
+      { name: "Clients", href: "/clients", icon: Briefcase, roles: ["FOUNDER", "CO-FOUNDER"] },
+      { name: "Bookings", href: "/bookings", icon: Calendar, roles: ["FOUNDER", "CO-FOUNDER", "MANAGER"] },
+      { name: "Packages", href: "/packages", icon: Grid, roles: ["FOUNDER", "CO-FOUNDER", "MANAGER"] },
+      { name: "Invoices & Coupons", href: "/billing", icon: DollarSign, roles: ["FOUNDER", "CO-FOUNDER"] },
+      { name: "CMS Live Content", href: "/cms", icon: FileText, roles: ["FOUNDER"] },
+      { name: "Team Workload", href: "/team", icon: Settings, roles: ["FOUNDER", "CO-FOUNDER"] },
+      { name: "Audit Trail Logs", href: "/logs", icon: Shield, roles: ["FOUNDER", "CO-FOUNDER"] },
+    ];
+    return menuItems.filter((item) => item.roles.includes(user.role));
+  }, [user]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4">
@@ -109,21 +126,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   if (!user) return null;
-
-  // Sidebar Menu Items filtered by User Role Permissions
-  const menuItems = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["FOUNDER", "CO-FOUNDER", "MANAGER", "EDITOR", "PHOTOGRAPHER", "VIDEOGRAPHER"] },
-    { name: "Leads CRM", href: "/leads", icon: Users, roles: ["FOUNDER", "CO-FOUNDER", "MANAGER"] },
-    { name: "Clients", href: "/clients", icon: Briefcase, roles: ["FOUNDER", "CO-FOUNDER"] },
-    { name: "Bookings", href: "/bookings", icon: Calendar, roles: ["FOUNDER", "CO-FOUNDER", "MANAGER"] },
-    { name: "Packages", href: "/packages", icon: Grid, roles: ["FOUNDER", "CO-FOUNDER", "MANAGER"] },
-    { name: "Invoices & Coupons", href: "/billing", icon: DollarSign, roles: ["FOUNDER", "CO-FOUNDER"] },
-    { name: "CMS Live Content", href: "/cms", icon: FileText, roles: ["FOUNDER"] },
-    { name: "Team Workload", href: "/team", icon: Settings, roles: ["FOUNDER", "CO-FOUNDER"] },
-    { name: "Audit Trail Logs", href: "/logs", icon: Shield, roles: ["FOUNDER", "CO-FOUNDER"] },
-  ];
-
-  const allowedMenuItems = menuItems.filter((item) => item.roles.includes(user.role));
 
   return (
     <div className="min-h-screen bg-black flex text-white relative">

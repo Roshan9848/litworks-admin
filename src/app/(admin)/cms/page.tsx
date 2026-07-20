@@ -131,6 +131,8 @@ export default function CMSLiveEditorPage() {
     }
   };
 
+  const [savingSection, setSavingSection] = useState<string | null>(null);
+
   const handleCMSUpdate = async (sectionKey: string, content: any) => {
     if (currentUser?.role !== "FOUNDER") {
       alert("Forbidden: Only the Founder can modify CMS contents.");
@@ -138,6 +140,7 @@ export default function CMSLiveEditorPage() {
     }
 
     setSaving(true);
+    setSavingSection(sectionKey);
     setSuccessMsg("");
     setErrorMsg("");
 
@@ -159,6 +162,7 @@ export default function CMSLiveEditorPage() {
       setErrorMsg(err.message || "Failed to save CMS data");
     } finally {
       setSaving(false);
+      setSavingSection(null);
     }
   };
 
