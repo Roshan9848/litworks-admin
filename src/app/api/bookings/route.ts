@@ -5,6 +5,8 @@ import { getAuthUser } from "@/lib/auth";
 import AuditLog from "@/models/AuditLog";
 import Notification from "@/models/Notification";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   try {
     await connectDB();

@@ -100,10 +100,11 @@ export default function BillingManagementPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      const timestamp = Date.now();
       const [paymentsRes, couponsRes, bookingsRes] = await Promise.all([
-        fetch("/api/payments"),
-        fetch("/api/coupons"),
-        fetch("/api/bookings")
+        fetch(`/api/payments?_t=${timestamp}`),
+        fetch(`/api/coupons?_t=${timestamp}`),
+        fetch(`/api/bookings?_t=${timestamp}`)
       ]);
 
       const paymentsData = await paymentsRes.json();

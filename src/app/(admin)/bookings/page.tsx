@@ -134,7 +134,7 @@ export default function BookingsManagementPage() {
 
   const fetchBookings = async () => {
     try {
-      const res = await fetch("/api/bookings");
+      const res = await fetch(`/api/bookings?_t=${Date.now()}`);
       const data = await res.json();
       if (data.success) {
         setBookings(data.bookings);

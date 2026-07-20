@@ -4,6 +4,8 @@ import Payment from "@/models/Payment";
 import Booking from "@/models/Booking";
 import { getAuthUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
