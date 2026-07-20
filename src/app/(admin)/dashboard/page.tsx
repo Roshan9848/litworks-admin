@@ -365,10 +365,10 @@ export default function DashboardPage() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest font-mono">
-                Total Leads Captured
+                Total Bookings
               </p>
               <h3 className="text-2xl font-black mt-2 text-white">
-                {metrics.totalLeads}
+                {metrics.totalBookings || 0}
               </h3>
             </div>
             <div className="p-2 rounded-lg bg-brand-orange/10 border border-brand-orange/20 text-brand-orange">
@@ -376,7 +376,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mt-4 flex items-center gap-1.5 text-[10px] text-emerald-500 font-mono">
-            <span>Steady flow of incoming inquiries</span>
+            <span>{metrics.activeBookings || 0} Active Shoot Bookings</span>
           </div>
         </div>
       </div>

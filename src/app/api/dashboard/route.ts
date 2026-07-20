@@ -71,18 +71,48 @@ export async function GET(req: NextRequest) {
     }
 
     // 1. Core KPIs (For Founder, Co-Founder, Manager)
-    // Total Revenue
     const payments = await Payment.find({ status: "captured" });
-    const totalRevenue = payments.reduce((acc, curr) => acc + curr.amount, 0);
+    const paidBookings = await Booking.find({ paymentStatus: "paid" });
 
-    // Revenue This Month
+    // Payment Transaction IDs to avoid double counting if recorded in both collections
+    const paymentTxIds = new Set(payments.map((p) => p.transactionId).filter(Boolean));
+
+    let totalRevenue = payments.reduce((acc, curr) => acc + curr.amount, 0);
+
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const thisMonthPayments = payments.filter((p) => new Date(p.createdAt) >= startOfMonth);
-    const revenueThisMonth = thisMonthPayments.reduce((acc, curr) => acc + curr.amount, 0);
+    let revenueThisMonth = thisMonthPayments.reduce((acc, curr) => acc + curr.amount, 0);
 
-    // Active Clients
-    const activeClients = await Client.countDocuments();
+    // Sum revenue from paid bookings
+    paidBookings.forEach((b) => {
+      if (b.transactionId && paymentTxIds.has(b.transactionId)) return;
+
+      let amt = b.paymentConfirmedAmount || 0;
+      if (!amt || amt <= 0) {
+        const totalStr = b.dynamicFields?.calculatedTotalPrice || b.dynamicFields?.bookingDepositPaid;
+        if (totalStr) {
+          const parsed = parseFloat(totalStr.toString().replace(/[^0-9.]/g, ""));
+          if (!isNaN(parsed) && parsed > 0) amt = parsed;
+        }
+      }
+
+      totalRevenue += amt;
+
+      const bookingDate = new Date(b.paymentConfirmedAt || b.createdAt || Date.now());
+      if (bookingDate >= startOfMonth) {
+        revenueThisMonth += amt;
+      }
+    });
+
+    // Active Clients (Unique clients across Client collection + paid/active Bookings)
+    const clientCount = await Client.countDocuments();
+    const uniqueBookingClients = await Booking.distinct("email", { email: { $exists: true, $ne: "" } });
+    const activeClients = Math.max(clientCount, uniqueBookingClients.length);
+
+    // Booking KPIs
+    const totalBookings = await Booking.countDocuments();
+    const activeBookings = await Booking.countDocuments({ bookingStatus: { $ne: "Completed" } });
 
     // Total Leads
     const totalLeads = await Lead.countDocuments();
@@ -112,6 +142,24 @@ export async function GET(req: NextRequest) {
       }
     });
 
+    paidBookings.forEach((b) => {
+      if (b.transactionId && paymentTxIds.has(b.transactionId)) return;
+      let amt = b.paymentConfirmedAmount || 0;
+      if (!amt || amt <= 0) {
+        const totalStr = b.dynamicFields?.calculatedTotalPrice || b.dynamicFields?.bookingDepositPaid;
+        if (totalStr) {
+          const parsed = parseFloat(totalStr.toString().replace(/[^0-9.]/g, ""));
+          if (!isNaN(parsed) && parsed > 0) amt = parsed;
+        }
+      }
+
+      const date = new Date(b.paymentConfirmedAt || b.createdAt || Date.now());
+      const key = date.toLocaleString("default", { month: "short", year: "2-digit" });
+      if (monthlyRevenueMap[key] !== undefined) {
+        monthlyRevenueMap[key] += amt;
+      }
+    });
+
     const revenueGrowth = Object.entries(monthlyRevenueMap).map(([month, revenue]) => ({
       month,
       revenue,
@@ -127,10 +175,10 @@ export async function GET(req: NextRequest) {
     );
 
     // C. Package Performance (Bookings count by service type)
-    const bookings = await Booking.find({ paymentStatus: "paid" });
+    const bookings = await Booking.find();
     const packagePerformanceMap: { [key: string]: number } = {};
     bookings.forEach((b) => {
-      const title = b.dynamicFields?.planTitle || b.service;
+      const title = b.dynamicFields?.planTitle || b.service || "Standard Service";
       packagePerformanceMap[title] = (packagePerformanceMap[title] || 0) + 1;
     });
 
@@ -170,6 +218,8 @@ export async function GET(req: NextRequest) {
         activeClients,
         totalLeads,
         activeProjects,
+        totalBookings,
+        activeBookings,
         conversionRate,
       },
       charts: {
