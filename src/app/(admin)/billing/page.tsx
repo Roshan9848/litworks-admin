@@ -58,6 +58,7 @@ interface Coupon {
 export default function BillingManagementPage() {
   const [payments, setPayments] = useState<PaymentTransaction[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"ledgers" | "coupons">("ledgers");
 
@@ -67,6 +68,8 @@ export default function BillingManagementPage() {
 
   // Modals state
   const [showAddCouponModal, setShowAddCouponModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState("");
 
   // Form states
   const [couponForm, setCouponForm] = useState({
@@ -97,16 +100,24 @@ export default function BillingManagementPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [paymentsRes, couponsRes] = await Promise.all([
+      const [paymentsRes, couponsRes, bookingsRes] = await Promise.all([
         fetch("/api/payments"),
-        fetch("/api/coupons")
+        fetch("/api/coupons"),
+        fetch("/api/bookings")
       ]);
 
       const paymentsData = await paymentsRes.json();
       const couponsData = await couponsRes.json();
+      const bookingsData = await bookingsRes.json();
 
       if (paymentsData.success) setPayments(paymentsData.payments);
       if (couponsData.success) setCoupons(couponsData.coupons);
+      if (bookingsData.success) {
+        setBookings(bookingsData.bookings);
+        if (bookingsData.bookings.length > 0 && !selectedBookingId) {
+          setSelectedBookingId(bookingsData.bookings[0]._id);
+        }
+      }
     } catch (e) {
       console.error("Error loading billing data:", e);
     } finally {
@@ -239,15 +250,24 @@ export default function BillingManagementPage() {
             Track client transaction ledger balances and manage campaign coupon codes
           </p>
         </div>
-        {activeTab === "coupons" && currentUser?.role === "FOUNDER" && (
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowAddCouponModal(true)}
-            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-brand-orange text-black font-extrabold text-xs uppercase tracking-wider hover:bg-white transition-all cursor-pointer shadow-[0_0_15px_rgba(255,122,0,0.2)]"
+            onClick={() => setShowInvoiceModal(true)}
+            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-brand-orange text-white font-extrabold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg"
           >
-            <Plus className="w-4 h-4" />
-            <span>Generate Coupon</span>
+            <Download className="w-4 h-4 text-brand-orange" />
+            <span>Generate Booking Invoice</span>
           </button>
-        )}
+          {activeTab === "coupons" && currentUser?.role === "FOUNDER" && (
+            <button
+              onClick={() => setShowAddCouponModal(true)}
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-brand-orange text-black font-extrabold text-xs uppercase tracking-wider hover:bg-white transition-all cursor-pointer shadow-[0_0_15px_rgba(255,122,0,0.2)]"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Generate Coupon</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}
@@ -539,6 +559,106 @@ export default function BillingManagementPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: GENERATE INVOICE FROM BOOKING */}
+      {showInvoiceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-lg bg-neutral-950 border border-neutral-900 rounded-3xl p-6 shadow-2xl relative animate-scaleIn">
+            <button
+              onClick={() => setShowInvoiceModal(false)}
+              className="absolute right-6 top-6 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-lg font-black uppercase tracking-wider text-white mb-2">
+              Generate Booking <span className="text-brand-orange">Tax Invoice</span>
+            </h3>
+            <p className="text-[10px] text-neutral-400 uppercase font-mono mb-6">
+              Select any client booking to generate an official LITWORKS PDF Tax Invoice
+            </p>
+
+            {bookings.length === 0 ? (
+              <div className="p-8 text-center text-xs text-neutral-500 font-mono">
+                No active bookings found in database.
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">
+                    Select Client Booking *
+                  </label>
+                  <select
+                    value={selectedBookingId}
+                    onChange={(e) => setSelectedBookingId(e.target.value)}
+                    className="w-full bg-black border border-neutral-850 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-brand-orange font-mono cursor-pointer"
+                  >
+                    {bookings.map((b) => (
+                      <option key={b._id} value={b._id}>
+                        {b.orderId} — {b.name} ({b.service}) — {b.dynamicFields?.calculatedTotalPrice || "₹0"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {(() => {
+                  const sel = bookings.find((b) => b._id === selectedBookingId) || bookings[0];
+                  if (!sel) return null;
+                  const confirmedAmt = sel.paymentConfirmedAmount || parseFloat((sel.dynamicFields?.calculatedTotalPrice || "999").replace(/[^0-9.]/g, "")) || 999;
+                  const basePrice = Math.round((confirmedAmt / 1.18) * 100) / 100;
+                  const gstPrice = Math.round((confirmedAmt - basePrice) * 100) / 100;
+
+                  return (
+                    <div className="bg-black border border-neutral-900 rounded-2xl p-4 space-y-3 font-mono text-xs">
+                      <div className="flex justify-between border-b border-neutral-900 pb-2">
+                        <span className="text-neutral-500">CLIENT</span>
+                        <span className="text-white font-bold">{sel.name}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-neutral-900 pb-2">
+                        <span className="text-neutral-500">SERVICE</span>
+                        <span className="text-brand-orange font-bold">{sel.service}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-neutral-900 pb-2">
+                        <span className="text-neutral-500">BASE PRICE</span>
+                        <span className="text-white">INR {basePrice.toLocaleString("en-IN")}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-neutral-900 pb-2">
+                        <span className="text-neutral-500">18% GST (CGST+SGST)</span>
+                        <span className="text-white">INR {gstPrice.toLocaleString("en-IN")}</span>
+                      </div>
+                      <div className="flex justify-between pt-1">
+                        <span className="text-neutral-400 font-bold">TOTAL INVOICE AMOUNT</span>
+                        <span className="text-emerald-400 font-black text-sm">INR {confirmedAmt.toLocaleString("en-IN")}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <div className="pt-4 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowInvoiceModal(false)}
+                    className="px-5 py-2.5 rounded-xl border border-neutral-900 hover:bg-neutral-900/50 text-neutral-400 hover:text-white text-xs font-bold uppercase tracking-wider cursor-pointer"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const sel = bookings.find((b) => b._id === selectedBookingId) || bookings[0];
+                      if (sel) handleDownloadInvoice(sel._id, sel.orderId);
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-brand-orange hover:bg-white text-black font-extrabold text-xs uppercase tracking-wider cursor-pointer flex items-center gap-2 shadow-[0_0_15px_rgba(255,122,0,0.3)]"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download PDF Tax Invoice</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

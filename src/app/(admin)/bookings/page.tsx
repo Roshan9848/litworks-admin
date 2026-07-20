@@ -348,6 +348,23 @@ export default function BookingsManagementPage() {
     document.body.removeChild(link);
   };
 
+  const handleDownloadInvoice = async (bookingId: string, orderId: string) => {
+    try {
+      const res = await fetch(`/api/invoices/${bookingId}/pdf`);
+      if (!res.ok) throw new Error("Invoice download failed");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Invoice_LIT-${orderId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err: any) {
+      alert(err.message || "Failed to download tax invoice PDF.");
+    }
+  };
+
   if (loading && bookings.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -638,6 +655,17 @@ export default function BookingsManagementPage() {
                         <span className="text-white text-[10px] truncate">{selectedBooking.transactionId}</span>
                       </div>
                     )}
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-neutral-900">
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadInvoice(selectedBooking._id, selectedBooking.orderId)}
+                      className="w-full py-2.5 px-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-brand-orange text-white font-extrabold text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+                    >
+                      <Download className="w-3.5 h-3.5 text-brand-orange" />
+                      <span>Download PDF Tax Invoice</span>
+                    </button>
                   </div>
 
                   {selectedBooking.paymentStatus === "pending" && (
