@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Booking from "@/models/Booking";
+import InvoiceTemplate from "@/models/InvoiceTemplate";
 import PDFDocument from "pdfkit";
 import { getAuthUser } from "@/lib/auth";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(
   req: NextRequest,
@@ -21,6 +24,14 @@ export async function GET(
     if (!booking) {
       return NextResponse.json({ success: false, error: "Booking not found" }, { status: 404 });
     }
+
+    const template = await InvoiceTemplate.findOne({ isDefault: true });
+
+    const companyName = template?.companyName || "LitWorks Media Agency";
+    const companyAddress = template?.companyAddress || "Madhapur, Hyderabad, Telangana, 500081";
+    const gstin = template?.gstin || "36AAACL8901D1Z5";
+    const email = template?.email || "billing@litworks.media";
+    const phone = template?.phone || "+91 9110797354";
 
     // Generate PDF
     const doc = new PDFDocument({ margin: 50 });
@@ -45,10 +56,10 @@ export async function GET(
     doc.fillColor("#555555").fontSize(10).text("Creative Media & Marketing Agency", 50, 75);
     
     // Company details
-    doc.fillColor("#000000").fontSize(9).text("LitWorks Media Agency", 50, 100);
-    doc.text("Madhapur, Hyderabad, Telangana, 500081");
-    doc.text("GSTIN: 36AAACL8901D1Z5");
-    doc.text("Email: billing@litworks.media | Phone: +91 9110797354");
+    doc.fillColor("#000000").fontSize(9).text(companyName, 50, 100);
+    doc.text(companyAddress);
+    doc.text(`GSTIN: ${gstin}`);
+    doc.text(`Email: ${email} | Phone: ${phone}`);
     
     // Invoice Metadata
     doc.text(`Invoice No: LIT-${booking._id.toString().substring(18).toUpperCase()}`, 350, 100);
@@ -117,14 +128,18 @@ export async function GET(
 
     // Terms
     doc.fillColor("#888888").fontSize(8);
-    doc.text("Note: This is an electronically generated tax invoice. No signature is required.", 50, 480);
-    doc.text("Thank you for partnering with LITWORKS Media. We look forward to delivering epic content!", 50, 495);
+    if (template?.footerNotes) {
+      doc.text(template.footerNotes, 50, 480);
+    } else {
+      doc.text("Note: This is an electronically generated tax invoice. No signature is required.", 50, 480);
+      doc.text("Thank you for partnering with LITWORKS Media. We look forward to delivering epic content!", 50, 495);
+    }
 
     doc.end();
 
     const pdfBuffer = await pdfPromise;
 
-    return new NextResponse(new Uint8Array(pdfBuffer), {
+    return new NextResponse(new Blob([pdfBuffer as any], { type: "application/pdf" }), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",

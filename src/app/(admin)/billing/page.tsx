@@ -59,8 +59,9 @@ export default function BillingManagementPage() {
   const [payments, setPayments] = useState<PaymentTransaction[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"ledgers" | "coupons">("ledgers");
+  const [activeTab, setActiveTab] = useState<"ledgers" | "coupons" | "templates">("ledgers");
 
   // Search filters
   const [ledgerSearch, setLedgerSearch] = useState("");
@@ -68,6 +69,17 @@ export default function BillingManagementPage() {
 
   // Modals state
   const [showAddCouponModal, setShowAddCouponModal] = useState(false);
+  const [showAddTemplateModal, setShowAddTemplateModal] = useState(false);
+  const [templateForm, setTemplateForm] = useState({
+    templateName: "",
+    companyName: "",
+    companyAddress: "",
+    gstin: "",
+    email: "",
+    phone: "",
+    footerNotes: "",
+    isDefault: true
+  });
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState("");
 
@@ -101,18 +113,21 @@ export default function BillingManagementPage() {
     setLoading(true);
     try {
       const timestamp = Date.now();
-      const [paymentsRes, couponsRes, bookingsRes] = await Promise.all([
+      const [paymentsRes, couponsRes, bookingsRes, templatesRes] = await Promise.all([
         fetch(`/api/payments?_t=${timestamp}`),
         fetch(`/api/coupons?_t=${timestamp}`),
-        fetch(`/api/bookings?_t=${timestamp}`)
+        fetch(`/api/bookings?_t=${timestamp}`),
+        fetch(`/api/invoices/templates?_t=${timestamp}`)
       ]);
 
       const paymentsData = await paymentsRes.json();
       const couponsData = await couponsRes.json();
       const bookingsData = await bookingsRes.json();
+      const templatesData = await templatesRes.json();
 
       if (paymentsData.success) setPayments(paymentsData.payments);
       if (couponsData.success) setCoupons(couponsData.coupons);
+      if (templatesData.success) setTemplates(templatesData.templates);
       if (bookingsData.success) {
         setBookings(bookingsData.bookings);
         if (bookingsData.bookings.length > 0 && !selectedBookingId) {
@@ -183,6 +198,70 @@ export default function BillingManagementPage() {
       }
     } catch (err: any) {
       alert(err.message || "Error deleting coupon");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateTemplateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (currentUser?.role !== "FOUNDER" && currentUser?.role !== "CO-FOUNDER") {
+      alert("Forbidden: Only Founders and Co-Founders can create invoice templates.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/invoices/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(templateForm)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowAddTemplateModal(false);
+        setTemplateForm({
+          templateName: "",
+          companyName: "",
+          companyAddress: "",
+          gstin: "",
+          email: "",
+          phone: "",
+          footerNotes: "",
+          isDefault: true
+        });
+        fetchData();
+      } else {
+        alert(data.error || "Failed to create invoice template");
+      }
+    } catch (err: any) {
+      alert(err.message || "Error creating template");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    if (currentUser?.role !== "FOUNDER") {
+      alert("Forbidden: Only the Founder can delete templates.");
+      return;
+    }
+
+    if (!confirm("Are you sure you want to delete this template?")) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/invoices/templates?id=${templateId}`, {
+        method: "DELETE"
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchData();
+      } else {
+        alert(data.error || "Failed to delete template");
+      }
+    } catch (err: any) {
+      alert(err.message || "Error deleting template");
     } finally {
       setLoading(false);
     }
@@ -268,6 +347,15 @@ export default function BillingManagementPage() {
               <span>Generate Coupon</span>
             </button>
           )}
+          {activeTab === "templates" && (currentUser?.role === "FOUNDER" || currentUser?.role === "CO-FOUNDER") && (
+            <button
+              onClick={() => setShowAddTemplateModal(true)}
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-brand-orange text-black font-extrabold text-xs uppercase tracking-wider hover:bg-white transition-all cursor-pointer shadow-[0_0_15px_rgba(255,122,0,0.2)]"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create Template</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -288,6 +376,14 @@ export default function BillingManagementPage() {
           }`}
         >
           Campaign Coupon Engine ({coupons.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("templates")}
+          className={`px-6 py-3 font-bold text-xs uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+            activeTab === "templates" ? "border-brand-orange text-brand-orange" : "border-transparent text-neutral-400 hover:text-white"
+          }`}
+        >
+          Invoice Templates ({templates.length})
         </button>
       </div>
 
@@ -468,6 +564,82 @@ export default function BillingManagementPage() {
           </div>
         </div>
       )}
+      {/* TEMPLATES TAB */}
+      {activeTab === "templates" && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {templates.length === 0 ? (
+              <div className="col-span-full py-12 text-center text-neutral-500 font-mono uppercase tracking-widest border border-dashed border-neutral-900 rounded-2xl">
+                No custom invoice templates created. Defaulting to LitWorks details.
+              </div>
+            ) : (
+              templates.map((tpl) => (
+                <div
+                  key={tpl._id}
+                  className="bg-neutral-950 border border-neutral-900 hover:border-brand-orange/45 rounded-2xl p-6 transition-all duration-300 shadow-xl flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-2">
+                        <Tag className="w-4 h-4 text-brand-orange" />
+                        <h4 className="text-sm font-black tracking-wider text-white uppercase font-mono">{tpl.templateName}</h4>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {currentUser?.role === "FOUNDER" && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTemplate(tpl._id)}
+                            className="text-neutral-600 hover:text-red-500 transition-colors p-1 cursor-pointer"
+                            title="Delete Template"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {tpl.isDefault && (
+                          <span className="px-2 py-0.5 rounded text-[8px] font-mono font-bold uppercase bg-brand-orange/20 text-brand-orange border border-brand-orange/30">
+                            Active Default
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-[10px] font-mono text-neutral-400 border-t border-neutral-900 pt-4">
+                      <div className="flex justify-between">
+                        <span>COMPANY NAME</span>
+                        <span className="text-white font-bold">{tpl.companyName}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>GSTIN</span>
+                        <span className="text-white font-bold">{tpl.gstin}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>EMAIL</span>
+                        <span className="text-white font-bold">{tpl.email}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>PHONE</span>
+                        <span className="text-white font-bold">{tpl.phone}</span>
+                      </div>
+                      {tpl.companyAddress && (
+                        <div className="flex flex-col gap-1 pt-1.5 border-t border-neutral-900">
+                          <span className="text-neutral-500 uppercase">ADDRESS</span>
+                          <span className="text-neutral-300 text-[9px]">{tpl.companyAddress}</span>
+                        </div>
+                      )}
+                      {tpl.footerNotes && (
+                        <div className="flex flex-col gap-1 pt-1.5 border-t border-neutral-900">
+                          <span className="text-neutral-500 uppercase">FOOTER TERMS</span>
+                          <span className="text-neutral-300 text-[9px]">{tpl.footerNotes}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modal: ADD COUPON */}
       {showAddCouponModal && (
@@ -557,6 +729,142 @@ export default function BillingManagementPage() {
                   className="px-5 py-2.5 rounded-xl bg-brand-orange hover:bg-white text-black font-extrabold text-xs uppercase tracking-wider cursor-pointer"
                 >
                   Deploy Campaign Code
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: ADD INVOICE TEMPLATE */}
+      {showAddTemplateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-xl bg-neutral-950 border border-neutral-900 rounded-3xl p-6 shadow-2xl relative animate-scaleIn">
+            <button
+              onClick={() => setShowAddTemplateModal(false)}
+              className="absolute right-6 top-6 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-lg font-black uppercase tracking-wider text-white mb-2">
+              Create Invoice <span className="text-brand-orange">Template</span>
+            </h3>
+            <p className="text-[10px] text-neutral-400 uppercase font-mono mb-6">
+              Create custom printable tax invoice metadata templates for your PDF exports
+            </p>
+
+            <form onSubmit={handleCreateTemplateSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">Template Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Standard LITWORKS Template"
+                    value={templateForm.templateName}
+                    onChange={(e) => setTemplateForm({ ...templateForm, templateName: e.target.value })}
+                    className="w-full bg-black border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">Company Legal Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. LitWorks Media Agency"
+                    value={templateForm.companyName}
+                    onChange={(e) => setTemplateForm({ ...templateForm, companyName: e.target.value })}
+                    className="w-full bg-black border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">Company Physical Address *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Madhapur, Hyderabad, Telangana, 500081"
+                  value={templateForm.companyAddress}
+                  onChange={(e) => setTemplateForm({ ...templateForm, companyAddress: e.target.value })}
+                  className="w-full bg-black border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange font-mono"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">GSTIN *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 36AAACL8901D1Z5"
+                    value={templateForm.gstin}
+                    onChange={(e) => setTemplateForm({ ...templateForm, gstin: e.target.value })}
+                    className="w-full bg-black border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">Email *</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. billing@litworks.media"
+                    value={templateForm.email}
+                    onChange={(e) => setTemplateForm({ ...templateForm, email: e.target.value })}
+                    className="w-full bg-black border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">Phone *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. +91 9110797354"
+                    value={templateForm.phone}
+                    onChange={(e) => setTemplateForm({ ...templateForm, phone: e.target.value })}
+                    className="w-full bg-black border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] uppercase tracking-widest text-neutral-400 font-bold mb-2">Footer Notes / Terms</label>
+                <textarea
+                  rows={2}
+                  placeholder="Custom terms, conditions, bank info or footer messages displayed on PDF..."
+                  value={templateForm.footerNotes}
+                  onChange={(e) => setTemplateForm({ ...templateForm, footerNotes: e.target.value })}
+                  className="w-full bg-black border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-orange font-mono resize-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isDefaultTemplate"
+                  checked={templateForm.isDefault}
+                  onChange={(e) => setTemplateForm({ ...templateForm, isDefault: e.target.checked })}
+                  className="w-4 h-4 bg-black border border-neutral-850 rounded text-brand-orange focus:ring-brand-orange focus:ring-opacity-25"
+                />
+                <label htmlFor="isDefaultTemplate" className="text-xs text-neutral-400 select-none">
+                  Set as active default template for PDF generation
+                </label>
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAddTemplateModal(false)}
+                  className="px-5 py-2.5 rounded-xl border border-neutral-900 hover:bg-neutral-900/50 text-neutral-400 hover:text-white text-xs font-bold uppercase tracking-wider cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-brand-orange hover:bg-white text-black font-extrabold text-xs uppercase tracking-wider cursor-pointer"
+                >
+                  Create & Activate Template
                 </button>
               </div>
             </form>
