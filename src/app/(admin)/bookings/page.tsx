@@ -14,7 +14,8 @@ import {
   Loader2,
   Users,
   CheckCircle,
-  Clock
+  Clock,
+  Download
 } from "lucide-react";
 
 interface Booking {
@@ -297,6 +298,56 @@ export default function BookingsManagementPage() {
     }).format(num);
   };
 
+  const handleExportCSV = () => {
+    if (filteredBookings.length === 0) {
+      alert("No bookings available to export.");
+      return;
+    }
+
+    const headers = [
+      "Order ID",
+      "Client Name",
+      "Phone",
+      "Email",
+      "State",
+      "City",
+      "Service",
+      "Plan Title",
+      "Shoot Area / Event",
+      "Total Price",
+      "Deposit Paid",
+      "Payment Status",
+      "Booking Status",
+      "Created Date"
+    ];
+
+    const rows = filteredBookings.map((b) => [
+      `"${b.orderId || ""}"`,
+      `"${b.name || ""}"`,
+      `"${b.phone || ""}"`,
+      `"${b.email || ""}"`,
+      `"${b.state || ""}"`,
+      `"${b.city || ""}"`,
+      `"${b.service || ""}"`,
+      `"${b.dynamicFields?.planTitle || ""}"`,
+      `"${b.dynamicFields?.shootArea || b.dynamicFields?.eventType || ""}"`,
+      `"${b.dynamicFields?.calculatedTotalPrice || ""}"`,
+      `"${b.dynamicFields?.bookingDepositPaid || ""}"`,
+      `"${b.paymentStatus || ""}"`,
+      `"${b.bookingStatus || ""}"`,
+      `"${new Date(b.createdAt).toLocaleString("en-IN")}"`
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Litworks_Bookings_Export_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading && bookings.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -311,13 +362,23 @@ export default function BookingsManagementPage() {
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black uppercase tracking-wider text-white">
-          Client <span className="text-brand-orange">Bookings</span>
-        </h1>
-        <p className="text-xs text-neutral-400 mt-1 uppercase tracking-wider font-mono">
-          Manage session schedules, payment statuses, and assign production crew workloads
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black uppercase tracking-wider text-white">
+            Client <span className="text-brand-orange">Bookings</span>
+          </h1>
+          <p className="text-xs text-neutral-400 mt-1 uppercase tracking-wider font-mono">
+            Manage session schedules, payment statuses, and assign production crew workloads
+          </p>
+        </div>
+
+        <button
+          onClick={handleExportCSV}
+          className="px-5 py-2.5 rounded-xl bg-brand-orange text-black font-extrabold text-xs uppercase tracking-wider hover:bg-white hover:shadow-[0_0_20px_rgba(255,122,0,0.4)] transition-all flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <Download className="w-4 h-4" />
+          <span>Export Excel / CSV</span>
+        </button>
       </div>
 
       {/* Filters */}
